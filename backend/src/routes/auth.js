@@ -10,6 +10,7 @@ router.post('/resend-otp', otpGenerateLimiter, authController.resendOtp);
 router.post('/login', authController.login);
 router.post('/forgot-password', otpGenerateLimiter, authController.forgotPassword);
 router.post('/reset-password', otpVerifyLimiter, authController.resetPassword);
+router.post('/google', authController.googleLogin);
 router.put('/theme', auth, authController.updateTheme);
 
 // Log out of all devices

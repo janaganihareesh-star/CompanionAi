@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
+    "@react-oauth/google": "^0.13.5",
     "@reduxjs/toolkit": "^2.2.3",
     "@tailwindcss/vite": "^4.0.0-alpha.14",
     "@tsparticles/react": "^4.2.1",

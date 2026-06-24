@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { GoogleLogin } from '@react-oauth/google';
+import { googleLoginAsync } from '../store/authSlice';
 import useAuth from '../hooks/useAuth';
 import ThemeToggle from '../components/ThemeToggle';
 import { Sparkles, Eye, EyeOff, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { register, isLoading } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -82,6 +87,39 @@ export default function RegisterPage() {
       setErrorShake(true);
       setTimeout(() => setErrorShake(false), 500);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setFormError('');
+    try {
+      const res = await dispatch(googleLoginAsync(credentialResponse.credential)).unwrap();
+      toast.success('Google Registration successful! Connecting companion...');
+      
+      setTimeout(() => {
+        axios.get('/api/profile/preferences', {
+          headers: { Authorization: `Bearer ${res.token}` }
+        }).then(prefRes => {
+          const pref = prefRes.data?.preference;
+          if (pref && pref.onboardingComplete) {
+            navigate('/home');
+          } else {
+            navigate('/onboarding/gender');
+          }
+        }).catch(() => {
+          navigate('/onboarding/gender');
+        });
+      }, 800);
+    } catch (err) {
+      setFormError(err.toString());
+      setErrorShake(true);
+      setTimeout(() => setErrorShake(false), 500);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setFormError('Google Sign-In was unsuccessful. Try again later.');
+    setErrorShake(true);
+    setTimeout(() => setErrorShake(false), 500);
   };
 
   // Form container stagger variants
@@ -259,6 +297,25 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+
+        <div className="mt-6 space-y-4">
+          <div className="relative flex items-center">
+            <div className="flex-grow border-t border-border/50"></div>
+            <span className="flex-shrink-0 mx-4 text-muted text-xs uppercase tracking-wider font-medium">Or continue with</span>
+            <div className="flex-grow border-t border-border/50"></div>
+          </div>
+          
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              shape="pill"
+              text="continue_with"
+            />
+          </div>
+        </div>
 
         <div className="mt-6 text-center text-sm text-muted">
           Already have an account?{' '}

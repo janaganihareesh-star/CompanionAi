@@ -4,6 +4,8 @@ const RelationshipStats = require('../models/RelationshipStats');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { sendEmailOTP } = require('../utils/emailService');
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // POST /api/auth/register
 exports.register = async (req, res, next) => {
@@ -332,5 +334,74 @@ exports.logoutAll = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+// POST /api/auth/google
+exports.googleLogin = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'Google token is required' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // First time Google Login -> Auto Register
+      user = new User({
+        fullName: name,
+        email: email,
+        emailVerified: true, // Google already verified it
+        age: 18, // Default age
+        passwordHash: 'GOOGLE_OAUTH_USER_' + Date.now().toString()
+      });
+      await user.save();
+
+      // Initialize preferences
+      await UserPreference.findOneAndUpdate(
+        { userId: user._id },
+        { userId: user._id },
+        { upsert: true, new: true }
+      );
+      await RelationshipStats.findOneAndUpdate(
+        { userId: user._id },
+        { userId: user._id, friendshipStartDate: new Date() },
+        { upsert: true, new: true }
+      );
+    } else {
+      // Existing user logging in with Google
+      if (!user.emailVerified) {
+        user.emailVerified = true;
+        await user.save();
+      }
+    }
+
+    // Generate JWT
+    const jwtToken = jwt.sign(
+      { userId: user._id, email: user.email, tokenVersion: user.tokenVersion },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Google login successful',
+      token: jwtToken,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        themeMode: user.themeMode
+      }
+    });
+  } catch (err) {
+    console.error("Google Auth Error:", err);
+    res.status(400).json({ success: false, message: 'Google authentication failed' });
   }
 };

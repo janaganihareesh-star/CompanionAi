@@ -9,6 +9,10 @@ const authService = {
     const res = await axios.post('/api/auth/login', credentials);
     return res.data;
   },
+  googleLogin: async (token) => {
+    const res = await axios.post('/api/auth/google', { token });
+    return res.data;
+  },
   verifyOtp: async (otpData) => {
     const res = await axios.post('/api/auth/verify-otp', otpData);
     return res.data;

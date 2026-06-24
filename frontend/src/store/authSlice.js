@@ -73,6 +73,18 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const googleLoginAsync = createAsyncThunk(
+  'auth/googleLogin',
+  async (token, { rejectWithValue }) => {
+    try {
+      const res = await axios.post('/api/auth/google', { token });
+      return res.data; // { success, token, user }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Google Login failed.');
+    }
+  }
+);
+
 export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, { dispatch }) => {
@@ -157,6 +169,23 @@ const authSlice = createSlice({
         localStorage.setItem('megha-user', JSON.stringify(action.payload.user));
       })
       .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Google Login
+      .addCase(googleLoginAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(googleLoginAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        localStorage.setItem('megha-token', action.payload.token);
+        localStorage.setItem('megha-user', JSON.stringify(action.payload.user));
+      })
+      .addCase(googleLoginAsync.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });
