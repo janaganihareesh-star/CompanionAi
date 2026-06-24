@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 10000000 // 10 MB limit
+      },
       manifest: {
         name: 'MEGHA AI',
         short_name: 'MEGHA AI',
