@@ -12,8 +12,9 @@ export default function useSocket() {
   useEffect(() => {
     if (!token || !user) return;
 
-    // Connect to Socket server (Vite proxy redirects to port 6999)
-    socketRef.current = io('/', {
+    // Connect to Socket server (Vite proxy redirects to port 6999 locally)
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:6999';
+    socketRef.current = io(backendUrl, {
       auth: { token },
       query: { token }
     });
