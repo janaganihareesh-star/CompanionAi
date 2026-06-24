@@ -30,6 +30,7 @@ export default function ChatPage() {
     messages,
     isLoading,
     isSending,
+    streamingMessage,
     fetchConversations,
     fetchMessages,
     sendMessage,
@@ -85,10 +86,10 @@ export default function ChatPage() {
     }
   }, [currentConversation]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom on new messages or streaming
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isSending]);
+  }, [messages, isSending, streamingMessage]);
 
   const handleInputChange = (e) => {
     setInputText(e.target.value);
@@ -118,17 +119,11 @@ export default function ChatPage() {
     try {
       let activeId = currentConversation?._id;
 
-      // Dispatch immediately so optimistic UI shows the message instantly!
-      const result = await sendMessage({
+      sendMessage({
         conversationId: activeId,
         message: textToSend,
         imageBase64
       });
-
-      // If it was a new chat, the backend created it. Navigate to the new URL.
-      if (!activeId && result.payload?.conversationId) {
-        navigate(`/chat/${result.payload.conversationId}`, { replace: true });
-      }
       
       // Refresh list to show new conversation / last message updates
       fetchConversations();
@@ -235,6 +230,7 @@ export default function ChatPage() {
             language={pref?.language || 'English'}
             isSending={isSending}
             isLoading={isLoading}
+            streamingMessage={streamingMessage}
             messagesEndRef={messagesEndRef}
 
             onArtifactOpen={(code, language) => setActiveArtifact({ code, language })}

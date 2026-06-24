@@ -28,7 +28,8 @@ export default function ChatBox({
   onPin,
   onArchive,
   onDelete,
-  isSidebarOpen = true
+  isSidebarOpen = true,
+  streamingMessage = ''
 }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const fileInputRef = useRef(null);
@@ -276,8 +277,18 @@ export default function ChatBox({
           </div>
         )}
         
-        {/* Typing Indicator */}
-        {isSending && <TypingIndicator />}
+        {/* Render Streaming Message if exists */}
+        {isSending && streamingMessage && (
+          <MessageBubble 
+            key="streaming-temp" 
+            message={{ _id: 'streaming-temp', sender: 'ai', content: streamingMessage + '█', mood: 'neutral' }} 
+            onArtifactOpen={onArtifactOpen} 
+            onOpenSources={onOpenSources} 
+          />
+        )}
+        
+        {/* Typing Indicator (Only show if not streaming yet) */}
+        {isSending && !streamingMessage && <TypingIndicator />}
         
         <div ref={messagesEndRef} />
       </div>

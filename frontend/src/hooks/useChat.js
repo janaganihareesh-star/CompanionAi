@@ -3,7 +3,7 @@ import {
   createConversationAsync,
   fetchConversations,
   fetchMessages,
-  sendMessage,
+  sendMessageStreamAsync,
   deleteConversation,
   setCurrentConversation,
   clearChat
@@ -15,7 +15,7 @@ export default function useChat() {
 
   const loadConversations = () => dispatch(fetchConversations());
   const loadMessages = (id) => dispatch(fetchMessages(id));
-  const send = (data) => dispatch(sendMessage(data)).unwrap();
+  const send = (data) => dispatch(sendMessageStreamAsync(data));
   const remove = (id) => dispatch(deleteConversation(id));
   const selectConversation = (conv) => dispatch(setCurrentConversation(conv));
   const resetChat = () => dispatch(clearChat());
@@ -23,6 +23,7 @@ export default function useChat() {
 
   return {
     ...chatState,
+    streamingMessage: chatState.streamingMessage,
     createConversation: createConv,
     fetchConversations: loadConversations,
     fetchMessages: loadMessages,

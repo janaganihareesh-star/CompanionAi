@@ -688,3 +688,185 @@ exports.executeCode = async (req, res, next) => {
     next(err);
   }
 };
+
+// POST /api/chat/send-stream
+exports.sendMessageStream = async (req, res, next) => {
+  // 1. Setup headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  try {
+    const { message, imageBase64, images } = req.body;
+    let { conversationId } = req.body;
+    const userId = req.user.id;
+
+    if (!message) {
+      res.write(`data: ${JSON.stringify({ error: 'Message content is required.' })}\n\n`);
+      return res.end();
+    }
+
+    // 1. Create or use conversation
+    let conversation;
+    if (conversationId) {
+      conversation = await Conversation.findOne({ _id: conversationId, userId });
+    }
+    if (!conversation) {
+      conversation = await Conversation.create({
+        userId,
+        title: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
+        type: 'chat'
+      });
+      conversationId = conversation._id;
+    }
+
+    // Send metadata immediately so frontend knows conversationId
+    res.write(`data: ${JSON.stringify({ type: 'metadata', conversationId })}\n\n`);
+
+    // 2. Save user message
+    const userMsgObj = await Message.create({
+      conversationId,
+      userId,
+      sender: 'user',
+      content: message,
+      mood: 'neutral'
+    });
+
+    const userPref = await UserPreference.findOne({ userId });
+    const aiName = userPref?.aiName || 'Maya';
+    const userName = req.user?.fullName || 'Friend';
+
+    const ragService = require('../services/ragService');
+
+    const [safetyOverride, emotionResult, promptData, longTermMemories] = await Promise.all([
+      safetyService.checkSafetyTriggers(message, { userName, aiName }),
+      emotionService.detectEmotion({ userId, text: message }),
+      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId }),
+      ragService.searchGlobalMessageHistory(userId, message, conversationId, 1)
+    ]);
+
+    let aiResponseText = '';
+    let finalMood = 'neutral';
+    let finalEnergyLevel = 'medium';
+    let finalDomain = null;
+    let finalConfidenceScore = 100;
+    let finalSources = [];
+    let finalDomains = [];
+
+    if (safetyOverride) {
+      aiResponseText = safetyOverride.reply;
+      finalMood = safetyOverride.action === 'crisis_override' ? 'sad' : finalMood;
+      res.write(`data: ${JSON.stringify({ type: 'chunk', text: aiResponseText })}\n\n`);
+    } else {
+      finalMood = emotionResult.mood;
+      finalEnergyLevel = emotionResult.energyLevel || 'medium';
+      userMsgObj.mood = finalMood;
+      await userMsgObj.save();
+
+      finalDomain = promptData.domain;
+      finalDomains = promptData.domains || [];
+
+      const historyLimit = 6;
+      const conversationHistory = await Message.find({ conversationId, _id: { $ne: userMsgObj._id } }).sort({ timestamp: -1 }).limit(historyLimit);
+      const chronologicalHistory = conversationHistory.reverse();
+      const historicalMessages = chronologicalHistory.map(msg => ({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.content.substring(0, 2000) }] }));
+
+      if (longTermMemories && longTermMemories.length > 0) {
+        const ragContextText = `[SYSTEM INJECTION: LONG TERM MEMORY RECALL]\nThe user's past statements relevant to this context:\n${longTermMemories.map(m => `- ${m.timestamp.toLocaleDateString()}: "${m.content}"`).join('\n')}\n[END INJECTION]`;
+        promptData.messages.push({ role: 'user', parts: [{ text: ragContextText }] });
+        promptData.messages.push({ role: 'model', parts: [{ text: 'Acknowledged. I have recalled this long-term context.' }] });
+      }
+
+      promptData.messages = [...historicalMessages, ...promptData.messages];
+      
+      const parts = [{ text: message }];
+      queueService.enqueue(async () => {
+        const embedding = await ragService.generateEmbedding(message);
+        if (embedding && embedding.length > 0) { userMsgObj.embedding = embedding; await userMsgObj.save(); }
+      }, 'User Message Embedding Generation');
+
+      promptData.messages.push({ role: 'user', parts });
+
+      try {
+        const aiResult = await aiService.generateAIResponseStream({
+          ...promptData,
+          energyLevel: finalEnergyLevel,
+          domain: finalDomain,
+          domains: finalDomains,
+          offlineMode: userPref?.offlineMode || false
+        }, (chunkText) => {
+          aiResponseText += chunkText;
+          res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunkText })}\n\n`);
+        });
+
+        finalConfidenceScore = aiResult.confidenceScore || 95;
+        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+      } catch (aiErr) {
+        console.error('AI Stream Error:', aiErr.message);
+        res.write(`data: ${JSON.stringify({ error: 'AI Generation failed' })}\n\n`);
+        return res.end();
+      }
+
+      const correctionTriggers = ['adi correct kaadhu', 'wrong ga remember', 'update chesuko', 'yeh galat hai', 'that is wrong', 'fix that', 'not ', 'change '];
+      const msgLower = message.toLowerCase();
+      if (correctionTriggers.some(t => msgLower.includes(t))) {
+        const correctMatch = message.match(/(?:not|change)\s+([\w\s]+)\s+(?:to|is)\s+([\w\s]+)/i);
+        if (correctMatch) {
+          const oldInfo = correctMatch[1].trim();
+          const newInfo = correctMatch[2].trim();
+          await memoryService.correctMemory({ userId, oldInfo, newInfo });
+        }
+      }
+
+      queueService.enqueue(async () => {
+        await memoryService.extractAndSaveMemories({ userId, userMessage: message });
+        await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
+      }, 'Memory and Knowledge Graph Extraction');
+    }
+
+    const aiMsgObj = await Message.create({
+      conversationId,
+      userId,
+      sender: 'ai',
+      content: aiResponseText,
+      mood: finalMood,
+      confidenceScore: finalConfidenceScore,
+      sources: finalSources
+    });
+
+    if (aiResponseText && aiResponseText.length > 10) {
+      queueService.enqueue(async () => {
+        const embedding = await ragService.generateEmbedding(aiResponseText);
+        if (embedding && embedding.length > 0) { aiMsgObj.embedding = embedding; await aiMsgObj.save(); }
+      }, 'AI Message Embedding Generation');
+    }
+
+    conversation.lastMessage = aiResponseText;
+    conversation.lastMessageAt = new Date();
+    conversation.messageCount += 2;
+    await conversation.save();
+
+    const stats = await RelationshipStats.findOne({ userId });
+    if (stats) {
+      stats.totalMessages += 2;
+      stats.trustScore = Math.min(100, stats.trustScore + 1);
+      stats.updateBondLevel();
+      stats.lastInteractionDate = new Date();
+      await stats.save();
+      await milestoneService.checkAndTrigger(userId);
+      if (stats.totalMessages % 1000 === 0) {
+        const today = new Date();
+        summaryService.generateSummary({ userId, month: today.getMonth() + 1, year: today.getFullYear() });
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ type: 'done', messageId: aiMsgObj._id, conversationId, mood: finalMood })}\n\n`);
+    res.end();
+
+  } catch (err) {
+    console.error('Stream Setup Error:', err);
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    res.end();
+  }
+};

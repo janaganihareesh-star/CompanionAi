@@ -11,6 +11,7 @@ router.use(auth);
 
 router.post('/create', chatController.createConversation);
 router.post('/send', chatController.sendMessage);
+router.post('/send-stream', chatController.sendMessageStream);
 router.get('/history', chatController.getHistory);
 router.get('/search', chatController.searchMessages);
 router.get('/:id/messages', chatController.getMessages);

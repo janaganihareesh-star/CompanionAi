@@ -613,8 +613,95 @@ If it is correct, output the exact same text. If there are errors, output a corr
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// STREAM GENERATE AI RESPONSE (SSE)
+// ──────────────────────────────────────────────────────────────────────────
+async function generateAIResponseStream({ systemPrompt, messages, energyLevel, domain, domains }, onToken) {
+  if (_keys.length === 0) {
+    onToken("Nenu vinnanu... Eeroju ela undi neeku? Cheppu ra.");
+    return { text: "Nenu vinnanu... Eeroju ela undi neeku? Cheppu ra.", tokensUsed: 25 };
+  }
+
+  let { key: apiKey, idx: currentIdx, waitUntil } = _getAvailableKey();
+  if (waitUntil) {
+    const wait = Math.max(0, waitUntil - Date.now());
+    await new Promise(r => setTimeout(r, wait));
+    const recovered = _getAvailableKey();
+    apiKey = recovered.key;
+    currentIdx = recovered.idx;
+  }
+
+  const isLowEnergy = energyLevel === 'low';
+  const generationConfig = {
+    temperature: isLowEnergy ? 0.7 : 0.88,
+    topK: 40,
+    topP: 0.95,
+    maxOutputTokens: 8192
+  };
+
+  let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:streamGenerateContent?alt=sse&key=${apiKey}`;
+
+  const requestBody = {
+    contents: messages,
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    generationConfig,
+    safetySettings: [
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+    ],
+    tools: toolService.geminiTools
+  };
+
+  try {
+    const response = await axios.post(url, requestBody, { responseType: 'stream' });
+    let fullText = '';
+    let buffer = '';
+
+    response.data.on('data', chunk => {
+      buffer += chunk.toString('utf8');
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Keep the last incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.slice(6);
+          if (dataStr.trim() === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.candidates && parsed.candidates[0].content?.parts?.length > 0) {
+              const text = parsed.candidates[0].content.parts[0].text;
+              fullText += text;
+              if (onToken) onToken(text);
+            }
+          } catch (e) {
+            // Ignore incomplete JSON parses
+          }
+        }
+      }
+    });
+
+    return new Promise((resolve, reject) => {
+      response.data.on('end', () => {
+        resolve({ text: fullText, tokensUsed: Math.ceil(fullText.length / 4) });
+      });
+      response.data.on('error', err => {
+        reject(err);
+      });
+    });
+  } catch (err) {
+    if (err.response?.status === 429 || err.response?.status === 503) {
+      _markKeyCooldown(currentIdx, err.response.status === 429 ? 65000 : 15000);
+    }
+    console.error('[AI Stream Error]', err.message);
+    throw err;
+  }
+}
+
 module.exports = {
   generateAIResponse,
+  generateAIResponseStream,
   checkResponseQuality,
   buildReinforcement
 };

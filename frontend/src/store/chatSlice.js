@@ -57,12 +57,86 @@ export const sendMessage = createAsyncThunk(
     try {
       const { token } = getState().auth;
       const res = await axios.post('/api/chat/send', { conversationId, message, imageBase64 }, getAuthConfig(token));
-      return res.data; // returns conversationId, userMessage, aiMessage, mood, timestamp
+      return res.data; 
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to dispatch message.');
     }
   }
 );
+
+export const sendMessageStreamAsync = ({ conversationId, message, imageBase64 }) => async (dispatch, getState) => {
+  dispatch(sendMessage.pending({ meta: { arg: { message } } }));
+
+  try {
+    const { token } = getState().auth;
+    
+    // Default config using fetch
+    const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/chat/send-stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ conversationId, message, imageBase64 })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to start stream');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let aiText = '';
+    let newConvId = conversationId;
+
+    dispatch({ type: 'chat/startStreaming' });
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataStr = line.slice(6);
+          if (!dataStr) continue;
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (parsed.error) throw new Error(parsed.error);
+            
+            if (parsed.type === 'metadata') {
+              newConvId = parsed.conversationId;
+              dispatch({ type: 'chat/streamMetadata', payload: parsed });
+            }
+            if (parsed.type === 'chunk') {
+              aiText += parsed.text;
+              dispatch({ type: 'chat/streamChunk', payload: parsed.text });
+            }
+            if (parsed.type === 'done') {
+              dispatch({ 
+                type: 'chat/streamDone', 
+                payload: { 
+                  text: aiText, 
+                  conversationId: newConvId,
+                  messageId: parsed.messageId,
+                  userMessageId: parsed.userMessageId,
+                  mood: parsed.mood,
+                  userMessage: message 
+                } 
+              });
+            }
+          } catch (e) {
+            // ignore JSON parse error for partial lines
+          }
+        }
+      }
+    }
+  } catch (err) {
+    dispatch(sendMessage.rejected(err.message));
+    dispatch({ type: 'chat/streamError' });
+  }
+};
 
 export const deleteConversation = createAsyncThunk(
   'chat/deleteConversation',
@@ -144,6 +218,58 @@ const chatSlice = createSlice({
     clearChat(state) {
       state.messages = [];
       state.currentConversation = null;
+    },
+    startStreaming(state) {
+      state.isSending = true;
+      state.streamingMessage = '';
+    },
+    streamChunk(state, action) {
+      state.streamingMessage += action.payload;
+    },
+    streamMetadata(state, action) {
+      if (!state.currentConversation) {
+        state.currentConversation = { _id: action.payload.conversationId };
+        localStorage.setItem('activeConversationId', action.payload.conversationId);
+      }
+    },
+    streamDone(state, action) {
+      state.isSending = false;
+      state.streamingMessage = '';
+      state.messages = state.messages.filter(m => !m.isOptimistic);
+      
+      const { text, messageId, conversationId, mood, userMessage, userMessageId } = action.payload;
+      
+      const uMsg = { _id: userMessageId, sender: 'user', content: userMessage, timestamp: new Date().toISOString() };
+      const aMsg = { _id: messageId, sender: 'ai', content: text, mood, timestamp: new Date().toISOString() };
+
+      if (!state.messages.some(m => m._id === uMsg._id)) state.messages.push(uMsg);
+      if (!state.messages.some(m => m._id === aMsg._id)) state.messages.push(aMsg);
+      state.messages.sort((a, b) => new Date(a.timestamp || a.createdAt) - new Date(b.timestamp || b.createdAt));
+
+      let conv = state.conversations.find(c => c._id === conversationId);
+      if (conv) {
+        conv.lastMessage = text;
+        conv.lastMessageAt = aMsg.timestamp;
+      } else {
+        state.conversations.unshift({
+          _id: conversationId,
+          title: userMessage.substring(0, 30) + '...',
+          lastMessage: text,
+          lastMessageAt: aMsg.timestamp,
+          isPinned: false,
+          isArchived: false
+        });
+        state.currentConversation = state.conversations[0];
+      }
+    },
+    streamError(state) {
+      state.isSending = false;
+      state.streamingMessage = '';
+      const optMsg = state.messages.find(m => m.isOptimistic);
+      if (optMsg) {
+        optMsg.isError = true;
+        optMsg.isOptimistic = false;
+      }
     }
   },
   extraReducers: (builder) => {
