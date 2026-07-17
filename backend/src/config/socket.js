@@ -8,7 +8,11 @@ module.exports = {
 
     io = new Server(server, {
       cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: [
+          process.env.FRONTEND_URL,
+          'http://localhost:5173',
+          'https://companion-ai-khaki.vercel.app'
+        ].filter(Boolean),
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
       }

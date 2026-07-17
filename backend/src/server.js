@@ -60,7 +60,7 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL, 
     'http://localhost:5173',
-    'https://closer-ai-3mru.vercel.app'
+    'https://companion-ai-khaki.vercel.app'
   ].filter(Boolean),
   credentials: true
 }));
