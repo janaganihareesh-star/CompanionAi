@@ -18,8 +18,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Configure Axios globally to point to Render backend
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:6999';
+// Provide a robust fallback if VITE_API_URL is missing
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://closerai-qcj3.onrender.com';
+axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use(
   (response) => response,
