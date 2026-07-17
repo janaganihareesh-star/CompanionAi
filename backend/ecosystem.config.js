@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'closer-ai-backend',
       script: 'src/server.js',
-      instances: 'max', // Use all CPU cores
+      instances: 1, // Reduced to 1 to prevent OOM on Render
       exec_mode: 'cluster',
       watch: false,
       max_memory_restart: '1G',
