@@ -19,7 +19,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
 
     - name: Install Frontend Dependencies
       working-directory: ./frontend
@@ -32,7 +32,7 @@ jobs:
     - name: Install Capacitor iOS
       working-directory: ./frontend
       run: |
-        npm install @capacitor/ios
+        npm install @capacitor/core @capacitor/cli @capacitor/ios
         npx cap add ios || npx cap sync ios
 
     - name: Setup Xcode
