@@ -303,6 +303,7 @@ const chatSlice = createSlice({
       .addCase(fetchMessages.pending, (state) => {
         state.isLoading = true;
         state.error = null;
+        state.messages = [];
       })
       .addCase(fetchMessages.fulfilled, (state, action) => {
         state.isLoading = false;

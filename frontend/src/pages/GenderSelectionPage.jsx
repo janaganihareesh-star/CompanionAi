@@ -79,11 +79,11 @@ export default function GenderSelectionPage() {
                   : 'bg-surface border-border hover:border-accent/40'
               }`}
             >
-              <div className="relative p-1 rounded-full bg-panel border-2 border-border/50">
+              <div className="relative p-1 rounded-2xl bg-panel border-2 border-border/50">
                 <img 
                   src={femaleFace} 
                   alt="Female AI Face" 
-                  className="w-28 h-28 rounded-full object-cover shadow-lg"
+                  className="w-28 h-28 rounded-xl object-cover shadow-lg"
                 />
               </div>
               <div>
@@ -108,11 +108,11 @@ export default function GenderSelectionPage() {
                   : 'bg-surface border-border hover:border-accent/40'
               }`}
             >
-              <div className="relative p-1 rounded-full bg-panel border-2 border-border/50">
+              <div className="relative p-1 rounded-2xl bg-panel border-2 border-border/50">
                 <img 
                   src={maleFace} 
                   alt="Male AI Face" 
-                  className="w-28 h-28 rounded-full object-cover shadow-lg"
+                  className="w-28 h-28 rounded-xl object-cover shadow-lg"
                 />
               </div>
               <div>

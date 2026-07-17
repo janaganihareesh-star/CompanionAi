@@ -66,36 +66,28 @@ export default function Sidebar() {
       )}
 
       {/* Sidebar Container */}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-surface border-r border-border flex flex-col justify-between h-screen z-50 transform transition-transform duration-300 md:relative md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-surface/90 backdrop-blur-xl border-r border-border/50 flex flex-col justify-between h-screen z-50 transform transition-all duration-300 md:relative md:translate-x-0 ${isMobileOpen ? 'translate-x-0 shadow-[20px_0_40px_rgba(0,0,0,0.5)]' : '-translate-x-full'}`}>
         
         {/* Top Section */}
         <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1 custom-scrollbar">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2 font-bold text-xl tracking-wide font-outfit text-text">
-              <Sparkles className="w-6 h-6 text-accent" />
-              <span>CloserAI</span>
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-3 font-bold text-2xl tracking-wide font-outfit">
+              <div className="relative">
+                <div className="absolute inset-0 bg-accent blur-md opacity-40 rounded-full animate-pulse"></div>
+                <img src="/logo.png" alt="CloserAI Logo" className="relative w-9 h-9 object-contain rounded-full ring-2 ring-accent/60" />
+              </div>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">CloserAI</span>
             </div>
-            <button className="md:hidden p-1 text-muted" onClick={() => setIsMobileOpen(false)}>
+            <button className="md:hidden p-1.5 text-muted hover:text-white bg-white/5 rounded-lg transition" onClick={() => setIsMobileOpen(false)}>
               <X className="w-5 h-5" />
             </button>
           </div>
           
-          <div className="hidden md:block absolute right-4 top-5">
+          <div className="hidden md:block absolute right-4 top-6">
             <ThemeToggle />
           </div>
 
-        {/* User Card */}
-        <div className="flex items-center gap-3 p-3 bg-panel rounded-xl border border-border">
-          <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-bold text-lg">
-            {user ? user.fullName[0].toUpperCase() : 'U'}
-          </div>
-          <div className="overflow-hidden">
-            <h4 className="font-bold text-sm text-text truncate">{user ? user.fullName : 'User'}</h4>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-semibold inline-block mt-0.5">
-              {bondName}
-            </span>
-          </div>
-        </div>
+
 
         {/* Navigation Items */}
         <nav className="space-y-1.5 flex-1">
@@ -109,13 +101,13 @@ export default function Sidebar() {
                   navigate(item.path);
                   setIsMobileOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition cursor-pointer text-left ${
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer text-left group ${
                   isActive
-                    ? 'bg-panel border-l-4 border-accent text-accent'
-                    : 'text-muted hover:bg-panel hover:text-text'
+                    ? 'bg-gradient-to-r from-accent/20 to-transparent border-l-4 border-accent text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
+                    : 'text-muted hover:bg-white/5 hover:text-gray-200 hover:translate-x-1 border-l-4 border-transparent'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${isActive ? 'text-accent' : 'text-muted'}`} />
+                <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'text-accent' : 'text-muted group-hover:text-gray-200 group-hover:scale-110'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -123,8 +115,11 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Bottom Section */}
-      <div className="p-6 border-t border-border/40 space-y-4">
+      {/* Bottom Section Card */}
+      <div className="p-5 mx-4 mb-5 rounded-2xl bg-gradient-to-b from-white/5 to-transparent border border-white/5 space-y-5 shadow-lg backdrop-blur-md relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-accent/20 rounded-full blur-[40px] pointer-events-none"></div>
+
         {/* Push Notification Toggle */}
         <button
           onClick={async () => {
@@ -132,35 +127,45 @@ export default function Sidebar() {
             const success = await subscribeToPushNotifications();
             if (success) alert('Web Push Notifications Enabled successfully!');
           }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-panel border border-border text-text hover:border-accent transition cursor-pointer"
+          className="w-full relative group overflow-hidden rounded-xl p-[1px] transition-transform hover:scale-[1.02]"
         >
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Enable Push OS</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/40 via-accent/40 to-emerald-500/40 opacity-40 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="relative w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-surface/90 text-gray-200 transition cursor-pointer">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span className="tracking-wide uppercase">Enable Push OS</span>
+            </div>
           </div>
         </button>
 
 
         {/* Bond Progress */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs font-semibold">
-            <span className="text-muted">Bond with {companionName}</span>
-            <span className="text-accent">{bondPercentage}%</span>
+        <div className="space-y-2 relative z-10">
+          <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+            <span className="text-gray-400">Bond with {companionName}</span>
+            <span className="text-accent drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]">{bondPercentage}%</span>
           </div>
-          <div className="w-full h-2 bg-panel border border-border rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full"
-              style={{ width: `${bondPercentage}%`, transition: 'width 0.8s ease' }}
-            />
+              className="h-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-rose-500 rounded-full relative"
+              style={{ width: `${bondPercentage}%`, transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' }}
+            >
+              <div className="absolute top-0 right-0 bottom-0 w-6 bg-gradient-to-l from-white/40 to-transparent blur-[1px]"></div>
+            </div>
           </div>
         </div>
 
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-border/50 to-transparent relative z-10"></div>
+
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-rose hover:bg-rose/10 transition cursor-pointer text-left"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-all duration-300 cursor-pointer relative z-10 group"
         >
-          <LogOut className="w-5 h-5 text-rose" />
-          <span>Disconnect</span>
+          <LogOut className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          <span className="uppercase tracking-widest">Disconnect</span>
         </button>
       </div>
     </aside>

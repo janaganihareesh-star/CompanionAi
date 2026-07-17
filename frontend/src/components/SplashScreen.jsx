@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FiStar } from 'react-icons/fi';
 
 const SplashScreen = ({ onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -29,18 +30,15 @@ const SplashScreen = ({ onComplete }) => {
             transition={{ duration: 0.6, ease: 'backOut' }}
             className="flex flex-col items-center"
           >
-            <div className="relative flex items-center justify-center w-24 h-24 mb-6">
+            <div className="relative flex items-center justify-center w-32 h-32 mb-6">
               <img 
-                src="/assets/logo.svg" 
-                alt="CloserAI" 
-                className="relative z-10 w-24 h-24"
+                src="/logo.png" 
+                alt="CloserAI Logo" 
+                className="w-full h-full object-contain rounded-full shadow-2xl ring-4 ring-violet-500/50"
                 onError={(e) => {
                   e.target.style.display = 'none';
                 }}
               />
-              <div className="absolute inset-0 z-10 flex items-center justify-center text-4xl font-bold text-white bg-violet-600 rounded-full shadow-lg">
-                M
-              </div>
             </div>
             
             <h1 className="text-3xl font-bold text-white tracking-wider mb-2">

@@ -8,6 +8,12 @@ const pluginService = require('./services/pluginService');
 require('dotenv').config();
 
 // Global Error Handlers for Stability
+const originalExit = process.exit;
+process.exit = function(code) {
+  console.error('[DEBUG] process.exit called with code', code, new Error().stack);
+  originalExit.call(process, code);
+};
+
 process.on('uncaughtException', (err) => {
   console.error('[CRITICAL] Uncaught Exception:', err);
   // Do not exit, try to recover
@@ -67,23 +73,6 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Enable Rate Limiting (Phase 4 Security)
 app.use(generalLimiter);
 
-// API Gateway Configuration (V15 Microservices)
-const { createProxyMiddleware } = require('http-proxy-middleware');
-
-app.use('/api/os', createProxyMiddleware({ 
-    target: 'http://localhost:7001', 
-    changeOrigin: true 
-}));
-
-app.use('/api/code', createProxyMiddleware({ 
-    target: 'http://localhost:7001', 
-    changeOrigin: true 
-}));
-
-app.use('/api/document', createProxyMiddleware({ 
-    target: 'http://localhost:7002', 
-    changeOrigin: true 
-}));
 // API Routes
 app.use('/api', apiRoutes);
 

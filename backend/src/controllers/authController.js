@@ -38,7 +38,8 @@ exports.register = async (req, res, next) => {
     await user.save();
 
     // Send OTP
-    await sendEmailOTP(user.email, emailOtp);
+    // Send OTP asynchronously to avoid blocking the API response
+    sendEmailOTP(user.email, emailOtp).catch(console.error);
 
     res.status(201).json({
       success: true,
@@ -140,7 +141,8 @@ exports.login = async (req, res, next) => {
       // Re-send verification code
       const emailOtp = user.generateEmailOtp();
       await user.save();
-      await sendEmailOTP(user.email, emailOtp);
+      // Send OTP asynchronously to avoid blocking the API response
+    sendEmailOTP(user.email, emailOtp).catch(console.error);
 
       return res.status(403).json({
         success: false,
@@ -191,7 +193,8 @@ exports.forgotPassword = async (req, res, next) => {
     const otp = user.generateEmailOtp();
     await user.save();
 
-    await sendEmailOTP(user.email, otp);
+    // Send OTP asynchronously to avoid blocking the API response
+    sendEmailOTP(user.email, otp).catch(console.error);
 
     res.status(200).json({
       success: true,
@@ -294,7 +297,8 @@ exports.resendOtp = async (req, res, next) => {
     await user.save();
 
     // Send OTP
-    await sendEmailOTP(user.email, emailOtp);
+    // Send OTP asynchronously
+    sendEmailOTP(user.email, emailOtp).catch(console.error);
 
     const emailConfigured = process.env.EMAIL_USER && !process.env.EMAIL_USER.includes('mock_email');
 

@@ -80,7 +80,7 @@ export default function ChatSidebar({
       {/* Top Bar: Logo & Close */}
       <div className="p-3 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer font-bold tracking-wide font-outfit text-text" onClick={() => navigate('/home')}>
-          <Sparkles className="w-6 h-6 text-accent" />
+          <img src="/logo.png" alt="CloserAI Logo" className="w-8 h-8 object-contain rounded-full ring-2 ring-accent/50" />
           <span className="font-bold text-text text-lg">CloserAI</span>
         </div>
         <Tooltip text="Close Sidebar" position="right">

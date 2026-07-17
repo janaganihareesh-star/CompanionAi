@@ -38,7 +38,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-2 font-extrabold text-2xl tracking-wide font-outfit text-slate-900 dark:text-white"
         >
-          <Sparkles className="w-8 h-8 text-fuchsia-600 dark:text-fuchsia-400" />
+          <img src="/logo.png" alt="CloserAI Logo" className="w-10 h-10 object-contain rounded-full shadow-lg ring-2 ring-fuchsia-500/50" />
           <span>CloserAI</span>
         </motion.div>
         <motion.div 

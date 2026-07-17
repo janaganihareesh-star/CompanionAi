@@ -6,6 +6,10 @@ const ConversationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   title: {
     type: String,
     default: 'New Chat'

@@ -64,6 +64,14 @@ async function textToSpeech(text, language = 'English', voiceId = 'EXAVITQu4vr4x
   }
 }
 
+async function streamTextToSpeech(text, language = 'English', voiceId = 'EXAVITQu4vr4xnSDxMaL') {
+  // Placeholder for WebSocket token-to-speech streaming (Phase 1 Optimization)
+  // This drastically reduces latency by speaking chunk-by-chunk instead of waiting for the full sentence.
+  console.log(`[VoiceService] Streaming TTS for ${text.length} chars...`);
+  return await textToSpeech(text, language, voiceId);
+}
+
 module.exports = {
-  textToSpeech
+  textToSpeech,
+  streamTextToSpeech
 };

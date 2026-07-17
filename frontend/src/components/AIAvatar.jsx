@@ -15,16 +15,16 @@ export default function AIAvatar({
     <div className={`relative ${size} flex-shrink-0`}>
       {/* Background glow when online */}
       {status === 'online' && (
-        <div className="absolute inset-0 rounded-full border border-accent/30 animate-ping opacity-75" />
+        <div className="absolute inset-0 rounded-xl border border-accent/30 opacity-50 drop-shadow-[0_0_10px_rgba(139,92,246,0.3)]" />
       )}
       
       {/* Avatar Box */}
-      <div className={`w-full h-full rounded-full border bg-panel flex items-center justify-center text-text z-10 relative overflow-hidden transition-all duration-300 ${ringColor}`}>
+      <div className={`w-full h-full rounded-xl border bg-panel flex items-center justify-center text-text z-10 relative overflow-hidden transition-all duration-300 ${ringColor}`}>
         {emoji === '🤖' ? (
           <img 
             src={avatarImg} 
             alt="AI Avatar" 
-            className="w-full h-full object-cover animate-swing drop-shadow-[0_0_8px_rgba(124,58,237,0.5)]" 
+            className="w-full h-full object-cover drop-shadow-[0_0_8px_rgba(124,58,237,0.5)]" 
           />
         ) : (
           <span className="select-none text-xl">{emoji}</span>
@@ -33,7 +33,7 @@ export default function AIAvatar({
 
       {/* Online indicator dot */}
       {status && (
-        <div className={`w-3 h-3 rounded-full border-2 border-surface absolute bottom-0 right-0 z-20 ${
+        <div className={`w-3 h-3 rounded-full border-2 border-surface absolute -bottom-0.5 -right-0.5 z-20 ${
           status === 'online' ? 'bg-emerald' : 'bg-muted'
         }`} />
       )}

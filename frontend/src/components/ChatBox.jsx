@@ -68,20 +68,35 @@ const ChatBox = React.memo(function ChatBox({
   const [latestVideoFrame, setLatestVideoFrame] = useState(null);
   
   const chatContainerRef = useRef(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // Allow a 150px threshold for being "at the bottom"
+    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAtBottom(atBottom);
+  };
+
+  const scrollToBottom = () => {
+    if (messagesEndRef && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      setIsAtBottom(true);
+    }
+  };
 
   // Robust Auto-Scroll Mechanism
   useEffect(() => {
-    if (chatContainerRef.current) {
-      const container = chatContainerRef.current;
+    // Only auto-scroll if the user is already at the bottom
+    if (isAtBottom && messagesEndRef && messagesEndRef.current) {
       // Use requestAnimationFrame to ensure DOM has painted the latest messages/bubbles
       requestAnimationFrame(() => {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'smooth'
+        messagesEndRef.current.scrollIntoView({
+          behavior: streamingMessage ? 'auto' : 'smooth',
+          block: 'end'
         });
       });
     }
-  }, [messages, isSending, streamingMessage]);
+  }, [messages, isSending, streamingMessage, messagesEndRef, isAtBottom]);
 
   useEffect(() => {
     if (window.visualViewport) {
@@ -362,7 +377,8 @@ const ChatBox = React.memo(function ChatBox({
       {/* Messages Scroll Area */}
       <div 
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 transform-gpu flex flex-col" 
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4 transform-gpu flex flex-col relative" 
         style={{ transform: 'translateZ(0)' }}
       >
         <AgentTerminal socket={socket} />
@@ -413,6 +429,16 @@ const ChatBox = React.memo(function ChatBox({
         
         {/* Continue Generating feature removed due to false positives */}        <div ref={messagesEndRef} />
       </div>
+
+      {/* Scroll to Bottom Button */}
+      {!isAtBottom && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-28 right-8 bg-surface border border-border hover:border-accent text-accent p-2.5 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] z-40 backdrop-blur-md transition-all animate-bounce"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        </button>
+      )}
 
       {/* Input Panel Box */}
       <div className="bg-surface border-t border-border/40 p-4">

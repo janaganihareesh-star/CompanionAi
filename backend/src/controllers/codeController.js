@@ -153,9 +153,39 @@ exports.executeCode = async (req, res) => {
                               (stderr && stderr.includes('error during connect'));
 
       if (isDockerMissing) {
-        console.error('[Code Engine] Docker unavailable. Secure Sandbox execution failed.');
-        if (tempDir) await fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
-        return res.status(503).json({ error: 'Secure execution environment (Docker) is currently unavailable.' });
+        console.warn('[Code Engine] Docker unavailable. Falling back to native host execution...');
+        let nativeCommand = '';
+        if (canonicalLang === 'javascript') {
+          nativeCommand = `node main.js`;
+        } else if (canonicalLang === 'python') {
+          nativeCommand = `python main.py`;
+        } else if (canonicalLang === 'java') {
+          const match = code.match(/(?:public\\s+)?class\\s+([a-zA-Z0-9_]+)/);
+          const className = match ? match[1] : 'Main';
+          nativeCommand = `javac ${className}.java && java ${className}`;
+        } else if (canonicalLang === 'cpp' || canonicalLang === 'c++') {
+          nativeCommand = isWindows ? `g++ main.cpp -o main.exe && main.exe` : `g++ main.cpp -o main && ./main`;
+        } else if (canonicalLang === 'go') {
+          nativeCommand = `go run main.go`;
+        }
+
+        if (nativeCommand) {
+          return exec(nativeCommand, { timeout: 10000, cwd: tempDir }, (nativeErr, nativeStdout, nativeStderr) => {
+            if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
+            if (nativeErr && nativeErr.killed) {
+              return res.json({ stdout: nativeStdout || '', stderr: 'Execution Timed Out (10s)', code: 1, signal: 'SIGTERM' });
+            }
+            return res.json({
+              stdout: nativeStdout || '',
+              stderr: nativeStderr || (nativeErr ? nativeErr.message : ''),
+              code: nativeErr ? (nativeErr.code || 1) : 0,
+              signal: nativeErr ? nativeErr.signal : null
+            });
+          });
+        } else {
+          if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
+          return res.status(503).json({ error: 'Secure execution environment (Docker) is unavailable, and native fallback is unsupported for this language.' });
+        }
       }
 
       if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);

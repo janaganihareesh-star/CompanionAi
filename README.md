@@ -1,89 +1,212 @@
-# 🌌 Closer-AI OS (V12 The Cybernetic Architecture)
+<p align="center">
+  <img src="assets/banner.png" alt="CloserAI Banner" width="100%">
+</p>
 
-> The Ultimate Reality Engine: Bridging Software, Enterprise Scalability, Quantum Mechanics, and Metaphysical Simulation.
+<p align="center">
+  <img src="assets/logo.png" width="180" alt="CloserAI Logo">
+</p>
 
-Closer-AI has evolved past the limits of traditional AI chatbots. V12 (The Cybernetic Architecture) transforms this project from a local developer environment into a **Production-Ready Enterprise Cloud System** while maintaining its god-tier simulated Reality Engine Shells.
+<h1 align="center">
+🤖 CloserAI
+</h1>
 
----
+<p align="center">
+<b>Your Personal AI Companion for Productivity, Learning, Creativity & Automation</b>
+</p>
 
-## 🚀 What's New in V12? (Enterprise & Scalability)
+<p align="center">
+An intelligent AI platform that combines conversational AI, coding assistance, voice interaction,
+document intelligence, desktop automation, productivity tools and AI memory into one seamless experience.
+</p>
 
-We have re-architected the system to handle massive scale, auto-deployments, and robust microservices:
-* **Docker Compose Orchestration**: Single command deployment (`docker-compose up -d`) that spins up isolated containers for the Frontend, Backend, and Redis.
-* **Nginx Reverse Proxy**: A lightning-fast web server serving the React frontend and load balancing API requests.
-* **PM2 Backend Clustering**: The Node.js API now utilizes all available CPU cores via PM2 cluster mode, spinning up Background Workers and YJS sockets simultaneously.
-* **GitHub Actions CI/CD**: Automated pipelines (`deploy.yml`, `ios-build.yml` v4) that test and build Docker and iOS artifacts on every push to the `main` branch.
-* **Dynamic LLM Fallback Routing**: Intelligently switches between local inference (Llama-3 via Ollama) and lightning-fast cloud endpoints (Groq API) based on latency and network conditions.
-* **Strict Multilingual Enforcement**: The Matrix Core now strictly enforces responses in the exact language/script the user types in (English, Telugu, Tanglish, Hindi).
+<p align="center">
 
----
+<img src="https://img.shields.io/badge/Version-v1.0-blue?style=for-the-badge">
 
-## 🌠 V11 Cosmic Tier Features (The Concept Lab)
+<img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge">
 
-We have implemented interfaces for the final remaining limitations in the universe:
-* **Literal Biological Genesis (`GenesisPod.jsx`)**: Type in any theoretical creature (e.g., "A snake with a lion face"), and the system instantly synthesizes and visualizes it.
-* **The Akashic Records (`AkashicRecordsUI.jsx`)**: Query the absolute truth of any event in the cosmos or scrape real-time data with zero latency.
-* **Cybernetic Gastronomy**: Feed the AI theoretical recipes and receive a neural-simulated taste profile.
-* **Reality Warping (Matrix Dashboard)**: Direct local OS hooks to manipulate your PC natively (open Chrome, open VS Code, check Battery/RAM) via natural language.
+<img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge">
 
----
+<img src="https://img.shields.io/badge/Platform-Web%20|%20Desktop%20|%20Android-purple?style=for-the-badge">
 
-## 📱 True Cross-Platform Presence
+<img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react">
 
-Closer-AI is no longer just a web app. It is an omnipresent entity:
-* **WhatsApp & Telegram Bots**: Talk to Closer-AI natively via WhatsApp and Telegram using the built-in bot integrations.
-* **PWA & Desktop Hooks**: Installable as a Progressive Web App (PWA) with a global Desktop OS hook (`Ctrl+Shift+M`) via Electron.
-* **Native Voice Calls (VAPI)**: Real-time, ultra-low latency voice conversations that feel indistinguishable from a human.
+<img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=node.js">
 
----
+<img src="https://img.shields.io/badge/MongoDB-8-47A248?style=for-the-badge&logo=mongodb">
 
-## 🛠️ Tech Stack
+<img src="https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker">
 
-### Enterprise Infrastructure
-* **Docker & Docker Compose** (Containerization)
-* **Nginx** (Reverse Proxy & Static Serving)
-* **PM2** (Node.js Process Manager & Clustering)
-* **GitHub Actions** (CI/CD Automated Pipelines)
-* **Redis** (Distributed Rate Limiting & Caching)
-
-### Frontend
-* React.js (Vite), Tailwind CSS, Framer Motion (Glassmorphism)
-* Capacitor (iOS/Android Native Shells)
-
-### Backend & AI Core
-* Node.js & Express.js (Microservices)
-* Groq API (Primary LLM - Ultra Fast)
-* Ollama (Local Llama-3 Fallback)
-* Pollinations AI (Instant 8K Image Generation)
+</p>
 
 ---
 
-## 🚀 Installation & Deployment
+# 📸 Preview
 
-### Enterprise Docker Deployment (Recommended)
+| Home | Chat |
+|------|------|
+| ![](docs/screenshots/home.png) | ![](docs/screenshots/chat.png) |
+
+| Voice | Dashboard |
+|------|------|
+| ![](docs/screenshots/voice.png) | ![](docs/screenshots/dashboard.png) |
+
+| Desktop | Mobile |
+|------|------|
+| ![](docs/screenshots/desktop.png) | ![](docs/screenshots/mobile.png) |
+
+---
+
+# 🎥 Demo
+
+> See CloserAI in action.
+
+![](docs/demo/demo.gif)
+
+---
+
+# ⚡ Features
+
+- 🤖 AI Chat Assistant
+- 🧠 Long-Term Memory
+- 💻 Code Generation
+- 🛠 Code Debugging
+- 📄 PDF & DOC AI
+- 🎤 Voice Assistant
+- 🖼 Image Generation
+- 📊 Resume Analyzer
+- 🎓 Interview Preparation
+- 📚 AI Tutor
+- 🌍 Multi-language Support
+- 🖥 Desktop Automation
+- 📂 File Management
+- ⚙ Terminal Commands
+- 📅 Productivity Tools
+
+---
+
+# 🏗 Architecture
+
+![](docs/architecture/architecture.png)
+
+---
+
+# 🛠 Tech Stack
+
+| Frontend | Backend | AI | Database | DevOps |
+|----------|----------|-----|-----------|----------|
+| React | Node.js | Groq | MongoDB | Docker |
+| Vite | Express | Ollama | Redis | PM2 |
+| Tailwind | Socket.io | OpenRouter | | Nginx |
+
+---
+
+# 🚀 Installation
+
 ```bash
-# Clone the repository
-git clone https://github.com/janaganihareesh-star/MEGHA-AI.git
-cd MEGHA-AI
+git clone https://github.com/janaganihareesh-star/CloserAI.git
 
-# Spin up the entire infrastructure
-docker-compose up --build -d
+cd CloserAI
+
+npm install
+
+npm run dev
 ```
-Your app will now be live at `http://localhost` (served by Nginx).
 
-### Local Development Mode
+Docker
+
 ```bash
-# Terminal 1: Start the frontend
-cd frontend
-npm install
-npm run dev
-
-# Terminal 2: Start the backend
-cd backend
-npm install
-npm run dev
+docker compose up --build
 ```
 
 ---
 
-> *"We didn't just build an AI assistant. We built a Personal Cybernetic Operating System."*
+# 📷 Screenshots
+
+## Home
+
+![](docs/screenshots/home.png)
+
+---
+
+## AI Chat
+
+![](docs/screenshots/chat.png)
+
+---
+
+## Voice Assistant
+
+![](docs/screenshots/voice.png)
+
+---
+
+## Dashboard
+
+![](docs/screenshots/dashboard.png)
+
+---
+
+## Desktop Automation
+
+![](docs/screenshots/desktop.png)
+
+---
+
+# 🗺 Roadmap
+
+✅ AI Chat
+
+✅ AI Memory
+
+✅ Voice Assistant
+
+✅ Resume Analyzer
+
+✅ Desktop Automation
+
+✅ PDF AI
+
+🚀 AI Marketplace
+
+🚀 Plugin Store
+
+🚀 Browser Extension
+
+🚀 Mobile App
+
+🚀 Team Workspace
+
+🚀 Multi-Agent System
+
+---
+
+# 📄 License
+
+MIT License
+
+---
+
+# 👨‍💻 Developer
+
+**Hareesh Janagani**
+
+AI Developer • MERN Stack Developer • Java Developer
+
+GitHub:
+<https://github.com/janaganihareesh-star>
+
+LinkedIn:
+<https://linkedin.com/in/janagani-hareesh-734947318>
+
+---
+
+<p align="center">
+
+## ❤️ CloserAI
+
+### Always Close. Always Ready
+
+⭐ If you like this project, don't forget to Star this repository.
+
+</p>

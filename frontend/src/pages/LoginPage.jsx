@@ -66,7 +66,14 @@ export default function LoginPage() {
         });
       }, 800);
     } catch (err) {
-      setFormError(err.toString());
+      if (err && typeof err === 'object' && err.unverified) {
+        toast.error('Account not verified. Redirecting to OTP verification...');
+        setTimeout(() => {
+          navigate('/verify-otp', { state: { userId: err.userId } });
+        }, 1500);
+        return;
+      }
+      setFormError(typeof err === 'string' ? err : (err?.message || 'Login failed'));
       setErrorShake(true);
       setTimeout(() => setErrorShake(false), 500);
     }

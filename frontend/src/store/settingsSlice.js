@@ -6,6 +6,7 @@ const initialState = {
   preferences: null,
   stats: null,
   minimalMode: false,
+  ecoMode: false,
   selectedModel: 'gemini-1.5-flash',
   isLoading: false,
   error: null
@@ -55,6 +56,15 @@ const settingsSlice = createSlice({
   name: 'settings',
   initialState,
   reducers: {
+    updateSetting: (state, action) => {
+      const { key, value } = action.payload;
+      if (key in state) {
+        state[key] = value;
+      }
+    },
+    toggleEcoMode: (state) => {
+      state.ecoMode = !state.ecoMode;
+    },
     toggleMinimalMode: (state) => {
       state.minimalMode = !state.minimalMode;
     },

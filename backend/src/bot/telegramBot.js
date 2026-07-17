@@ -6,13 +6,6 @@ const aiService = require('../services/aiService');
 const setupTelegramBot = () => {
   console.log('[TelegramBot] setupTelegramBot called!');
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  
-  if (!token) {
-    console.warn('[TelegramBot] TELEGRAM_BOT_TOKEN not provided. Skipping bot initialization.');
-    return;
-  }
-  
-  console.log('[TelegramBot] Token found. Initializing Telegraf...');
 
   const bot = new Telegraf(token);
 
@@ -58,7 +51,11 @@ const setupTelegramBot = () => {
   bot.launch({ dropPendingUpdates: true }).then(() => {
     console.log('🚀 [TelegramBot] CloserAI Bot is online and listening.');
   }).catch(e => {
-    console.error('🚀 [TelegramBot] Failed to launch:', e.message);
+    if (e.message.includes('409')) {
+      console.warn('⚠️ [TelegramBot] Port/Webhook conflict detected. Another instance is likely running. Skipping Telegram bot for this dev cycle.');
+    } else {
+      console.error('🚀 [TelegramBot] Failed to launch:', e.message);
+    }
   });
 
   // Enable graceful stop

@@ -126,9 +126,7 @@ export default function ChatPage() {
     };
   }, [currentConversation, socket]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, isSending, streamingMessage]);
+  // ChatBox handles its own robust scrolling now.
 
   const handleInputChange = (e) => {
     setInputText(e.target.value);
@@ -234,7 +232,12 @@ export default function ChatPage() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           currentConversation={currentConversation}
-          setCurrentConversation={(conv) => navigate(`/chat/${conv._id}`)}
+          setCurrentConversation={(conv) => {
+            navigate(`/chat/${conv._id}`);
+            if (window.innerWidth < 768) {
+              setIsSidebarOpen(false);
+            }
+          }}
           handleNewChat={handleNewChat}
           handleDelete={(id) => {
             if (window.confirm('Are you sure you want to permanently delete this chat?')) {
