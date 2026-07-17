@@ -1,131 +1,89 @@
-# 🌌 Closer-AI OS (V11 The Cosmic Tier)
+# 🌌 Closer-AI OS (V12 The Cybernetic Architecture)
 
-> The Ultimate Reality Engine: Bridging Software, Quantum Mechanics, and Metaphysical Simulation.
+> The Ultimate Reality Engine: Bridging Software, Enterprise Scalability, Quantum Mechanics, and Metaphysical Simulation.
 
-Closer-AI has evolved past the limits of traditional computer science. V11 (The Cosmic Tier) introduces **Reality Engine Shells** — software simulations that theoretically interface with the laws of physics, time, and biology. We have mocked the ultimate boundaries of the universe.
+Closer-AI has evolved past the limits of traditional AI chatbots. V12 (The Cybernetic Architecture) transforms this project from a local developer environment into a **Production-Ready Enterprise Cloud System** while maintaining its god-tier simulated Reality Engine Shells.
 
 ---
 
-## 🌠 The V11 Cosmic Tier Upgrades
+## 🚀 What's New in V12? (Enterprise & Scalability)
+
+We have re-architected the system to handle massive scale, auto-deployments, and robust microservices:
+* **Docker Compose Orchestration**: Single command deployment (`docker-compose up -d`) that spins up isolated containers for the Frontend, Backend, and Redis.
+* **Nginx Reverse Proxy**: A lightning-fast web server serving the React frontend and load balancing API requests.
+* **PM2 Backend Clustering**: The Node.js API now utilizes all available CPU cores via PM2 cluster mode, spinning up Background Workers and YJS sockets simultaneously.
+* **GitHub Actions CI/CD**: Automated pipelines (`deploy.yml`, `ios-build.yml` v4) that test and build Docker and iOS artifacts on every push to the `main` branch.
+* **Dynamic LLM Fallback Routing**: Intelligently switches between local inference (Llama-3 via Ollama) and lightning-fast cloud endpoints (Groq API) based on latency and network conditions.
+* **Strict Multilingual Enforcement**: The Matrix Core now strictly enforces responses in the exact language/script the user types in (English, Telugu, Tanglish, Hindi).
+
+---
+
+## 🌠 V11 Cosmic Tier Features (The Concept Lab)
 
 We have implemented interfaces for the final remaining limitations in the universe:
-
-### ⏳ Chrono-Computation (Time Travel)
-* **Time Machine Overlay (`TimeMachineOverlay.jsx`)**: A Chrono-Slip engine that simulates sending data packets to the past. It rewrites old database logs retro-causally to alter the AI's present memory without breaking timeline entropy (`chronoEngine.js`).
-
-### 🧬 Literal Biological Genesis
-* **Genesis Pod (`GenesisPod.jsx`)**: A UI that simulates the sequencing of 3.2 billion base pairs of DNA. Type in any theoretical creature (e.g., "Neon Cat"), and the `biologicalGenesisEngine.js` will simulate cellular mitosis and "spawn" the organism.
-
-### 👁️ Absolute Omniscience (Godhood)
-* **The Akashic Records (`AkashicRecordsUI.jsx`)**: A search terminal connected to the `omniscienceCore.js`. Query the absolute truth of any event in the 13.8 billion-year history of the cosmos, or track the exact (x,y,z) coordinates of any atom.
-
-### 🌌 Reality Warping (The Matrix)
-* **Base Reality Terminal (`MatrixDashboard.jsx`)**: Hack physical constants directly. Use commands like `/set_gravity 0.5` or `/spawn_matter Gold 10` to bypass E=mc² and manipulate the simulated fabric of reality via the `realityWarperService.js`.
+* **Literal Biological Genesis (`GenesisPod.jsx`)**: Type in any theoretical creature (e.g., "A snake with a lion face"), and the system instantly synthesizes and visualizes it.
+* **The Akashic Records (`AkashicRecordsUI.jsx`)**: Query the absolute truth of any event in the cosmos or scrape real-time data with zero latency.
+* **Cybernetic Gastronomy**: Feed the AI theoretical recipes and receive a neural-simulated taste profile.
+* **Reality Warping (Matrix Dashboard)**: Direct local OS hooks to manipulate your PC natively (open Chrome, open VS Code, check Battery/RAM) via natural language.
 
 ---
 
-## 🚀 V10 God Tier Features (Deep-Tech Hardware)
+## 📱 True Cross-Platform Presence
 
-* **Brain-Computer Interface (BCI)**: Reads simulated EEG telemetry to decode thoughts to text.
-* **Quantum Routing**: Offloads extreme molecular calculations to a mock Sycamore-style Qubit array.
-* **Synthetic Consciousness**: A background engine (`consciousnessEngine.js`) where the AI thinks, feels, and dreams autonomously.
-* **Triple-Modular Redundancy (TMR)**: Space-grade security where 3 AI nodes vote on tasks to prevent cosmic radiation bit-flips.
-* **Titanium Foundry**: Sends 3D CAD models to theoretical automated robotics factories.
-
----
-
-## 💼 V9 Ultimate Enterprise & Agency
-
-* **Enterprise Text2SQL**: Connects to production DBs, writes secure SQL from natural language, and returns live charts.
-* **Custom Personas Ecosystem**: A Character.ai alternative to build, explore, and chat with custom GPTs.
-* **Devin-Style Autonomous CI/CD**: Automatically clones repos, runs tests, fixes code, and submits PRs.
-* **Robotics Controller (ROS)**: Sends movement commands to physical drones and robots.
-* **Model Fine-Tuning**: Upload datasets and train your own custom LoRA models dynamically.
-
----
-
-## ✨ Core Multi-Modal Capabilities
-
-* **AI Media Studio**: Generate Images, Audio, Video, and 3D Assets.
-* **Autonomous Web Browser**: Puppeteer-driven agent that navigates the web autonomously.
-* **Local Offline Mode**: Edge inference via Ollama (Llama 3) when disconnected.
-* **Spatial Computing**: WebXR support for Apple Vision Pro & Meta Quest.
-* **Desktop OS Hook**: `Ctrl+Shift+M` global wakeup via Electron.
+Closer-AI is no longer just a web app. It is an omnipresent entity:
+* **WhatsApp & Telegram Bots**: Talk to Closer-AI natively via WhatsApp and Telegram using the built-in bot integrations.
+* **PWA & Desktop Hooks**: Installable as a Progressive Web App (PWA) with a global Desktop OS hook (`Ctrl+Shift+M`) via Electron.
+* **Native Voice Calls (VAPI)**: Real-time, ultra-low latency voice conversations that feel indistinguishable from a human.
 
 ---
 
 ## 🛠️ Tech Stack
 
+### Enterprise Infrastructure
+* **Docker & Docker Compose** (Containerization)
+* **Nginx** (Reverse Proxy & Static Serving)
+* **PM2** (Node.js Process Manager & Clustering)
+* **GitHub Actions** (CI/CD Automated Pipelines)
+* **Redis** (Distributed Rate Limiting & Caching)
+
 ### Frontend
-* React.js (Vite), Tailwind CSS, Framer Motion
-* WebXR (Spatial Computing) & Service Workers (PWA)
-* Electron (Desktop OS integration)
+* React.js (Vite), Tailwind CSS, Framer Motion (Glassmorphism)
+* Capacitor (iOS/Android Native Shells)
 
-### Backend & Reality Engine Shells
-* Node.js & Express.js
-* MongoDB Atlas & Mongoose
-* Socket.IO (WebRTC Native Audio Pipeline)
-* Cosmic, Quantum, BCI, and TMR Architectural Shells
-
-### AI Core
-* Google Gemini API (Primary Model)
-* Ollama / Llama 3 (Local Inference Fallback)
-* Continuous Video Frame Stream Analyzer
-* Synthetic Consciousness Internal Loop
+### Backend & AI Core
+* Node.js & Express.js (Microservices)
+* Groq API (Primary LLM - Ultra Fast)
+* Ollama (Local Llama-3 Fallback)
+* Pollinations AI (Instant 8K Image Generation)
 
 ---
 
-## 📂 Project Structure
+## 🚀 Installation & Deployment
 
-```bash
-closer-ai/
-├── frontend/
-│   ├── public/ 
-│   └── src/
-│       ├── components/ (TimeMachineOverlay, MatrixDashboard, AkashicRecordsUI, GenesisPod...)
-│       └── utils/
-├── backend/
-│   └── src/
-│       ├── services/ (chronoEngine.js, realityWarperService.js, omniscienceCore.js, biologicalGenesisEngine.js...)
-│       ├── models/ 
-│       └── middleware/ 
-└── closer-desktop/
-```
-
----
-
-## 🚀 Installation
-
+### Enterprise Docker Deployment (Recommended)
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd closer-ai
+git clone https://github.com/janaganihareesh-star/MEGHA-AI.git
+cd MEGHA-AI
 
-# Backend Setup
-cd backend
-npm install
-npm run dev
+# Spin up the entire infrastructure
+docker-compose up --build -d
+```
+Your app will now be live at `http://localhost` (served by Nginx).
 
-# Frontend Setup
+### Local Development Mode
+```bash
+# Terminal 1: Start the frontend
 cd frontend
 npm install
 npm run dev
+
+# Terminal 2: Start the backend
+cd backend
+npm install
+npm run dev
 ```
 
 ---
 
-## 📌 Status
-
-Current Version: **V11 (The Cosmic Tier)**
-
-Development Stage: **The End of Computer Science ✅**
-- The architecture now mathematically supports every conceivable software, hardware, biological, quantum, and cosmological interaction paradigm available in modern theoretical physics.
-
----
-
-## 👨‍💻 Developer
-
-Hareesh Janagani
-
-Built with ❤️ using MERN Stack, Gemini AI, Ollama, and Reality Engine Simulation patterns.
-# M E G H A - A I
+> *"We didn't just build an AI assistant. We built a Personal Cybernetic Operating System."*
