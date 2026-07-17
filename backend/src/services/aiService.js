@@ -7,6 +7,12 @@
 const axios = require('axios');
 const nicheRegistry = require('./nicheRegistry');
 const toolService = require('./toolService');
+let getIO;
+try {
+  getIO = require('../config/socket').getIO;
+} catch (e) {
+  getIO = () => null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MULTI-AGENT ORCHESTRATOR
@@ -17,37 +23,78 @@ function isComplexTask(message) {
     'build a complete startup plan with financials',
     'design entire system architecture'
   ];
-  return complexKeywords.some(kw => text.includes(kw));
+  const autonomousKeywords = [
+    'scrape', 'autonomously', 'devin', 'search the web and write', 'self-healing'
+  ];
+  return {
+    isComplex: complexKeywords.some(kw => text.includes(kw)),
+    isAutonomous: autonomousKeywords.some(kw => text.includes(kw))
+  };
 }
 
-async function runMultiAgentOrchestrator({ systemPrompt, messages, energyLevel, domain, domains }) {
+async function runMultiAgentOrchestrator({ systemPrompt, messages, energyLevel, domain, domains, userId }) {
   console.log('[Orchestrator] Complex task detected. Spinning up Sub-Agents...');
+  
+  const io = getIO();
+  const emitAgent = (agent, status, details = '') => {
+    if (io && userId) {
+      io.to(`user_${userId}`).emit('agent_status', { agent, status, details });
+    }
+  };
+
+  emitAgent('Orchestrator', 'Analyzing complex request...');
   
   const originalTask = messages[messages.length - 1].parts[0].text;
   
   // Phase 1: Planner Agent
-  const plannerPrompt = `You are the Planner Agent. Break this task into 3 distinct sub-tasks for a Market Agent, Finance Agent, and Execution Agent. Return ONLY the 3 sub-tasks as a numbered list. Task: ${originalTask}`;
+  emitAgent('Planner Agent', 'Breaking down task into execution steps...');
+  const plannerPrompt = `You are the Planner Agent. Analyze the user task and break it down into specialized Sub-Agents. 
+Return ONLY a valid JSON array of objects. Example: [{"agentName": "MarketAgent", "task": "Analyze market trends"}]. Do not return markdown block ticks, just raw JSON.
+Task: ${originalTask}`;
+
   const plannerResult = await generateAIResponse({ 
-    systemPrompt: "You are an expert project planner.", 
+    systemPrompt: "You are an expert project planner and JSON generator.", 
     messages: [{ role: 'user', parts: [{ text: plannerPrompt }] }], 
-    energyLevel: 'high' 
+    energyLevel: 'high',
+    _isOrchestratorCall: true
   });
   
   console.log('[Orchestrator] Planner output:', plannerResult.text);
+  
+  let agents = [];
+  try {
+    agents = JSON.parse(plannerResult.text.replace(/```json/g, '').replace(/```/g, '').trim());
+  } catch (e) {
+    console.error('Failed to parse planner JSON, fallback to basic synthesis.');
+    agents = [{ agentName: 'GeneralAgent', task: originalTask }];
+  }
 
-  // Phase 2: Execution Agents (Simulated via deep prompts)
+  // Phase 2: Parallel Execution
+  emitAgent('Execution Swarm', `Delegating to ${agents.length} sub-agents concurrently...`);
+  
+  const subAgentPromises = agents.map(agent => {
+    emitAgent(agent.agentName, 'Executing assigned sub-task...');
+    return generateAIResponse({
+      systemPrompt: `You are the ${agent.agentName}. Your specific task is: ${agent.task}. Output a detailed report.`,
+      messages: [{ role: 'user', parts: [{ text: originalTask }] }],
+      energyLevel: 'high',
+      _isOrchestratorCall: true
+    }).then(res => `### ${agent.agentName} Report\n${res.text}`);
+  });
+
+  const reports = await Promise.all(subAgentPromises);
+
+  // Phase 3: Synthesis
+  emitAgent('Master Synthesis Agent', 'Combining sub-agent reports into final output...');
   const synthesisPrompt = `You are the Master Synthesis Agent.
 Here is the original user task: "${originalTask}"
 
-Here is the plan:
-${plannerResult.text}
+Here are the detailed reports from your Sub-Agents:
+${reports.join('\n\n')}
 
-Execute the complete plan, acting as all the necessary sub-agents (Market, Finance, Execution).
-Combine everything into a massive, beautifully formatted, comprehensive response.
-Include CSS styling, temporal data ([HISTORICAL], [CURRENT], [FORECAST]), and ensure it answers the user completely.
-`;
+Synthesize these reports into a massive, beautifully formatted, comprehensive final response.
+Include CSS styling, and ensure it answers the user completely.`;
 
-  console.log('[Orchestrator] Master Agent Synthesizing...');
   const finalResult = await generateAIResponse({
     systemPrompt: systemPrompt + "\n\nYou are now acting as the Master Synthesis Agent combining multiple sub-agent reports.",
     messages: [{ role: 'user', parts: [{ text: synthesisPrompt }] }],
@@ -150,7 +197,7 @@ function _markKeyCooldown(idx, ms = 65000) {
   console.warn(`[Key Manager] Key[${idx}] cooldown ${ms/1000}s`);
 }
 // ──────────────────────────────────────────────────────────────────────────
-async function generateAIResponse({ systemPrompt, messages, energyLevel, domain, domains, offlineMode, _isOrchestratorCall = false }) {
+async function generateAIResponse({ systemPrompt, messages, energyLevel, domain, domains, offlineMode, userId, _isOrchestratorCall = false }) {
   // Phase 8.3: Full Offline Mode (Local Brain bypasses external API)
   if (offlineMode) {
     console.log('[Offline Mode] Routing directly to Local LLM (Ollama)...');
@@ -178,8 +225,19 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
   // Orchestrator Hook
   if (!_isOrchestratorCall && messages.length > 0) {
     const lastUserMessage = messages[messages.length - 1].parts?.[0]?.text;
-    if (isComplexTask(lastUserMessage)) {
-      return await runMultiAgentOrchestrator({ systemPrompt, messages, energyLevel, domain, domains });
+    const taskType = isComplexTask(lastUserMessage);
+    
+    if (taskType.isAutonomous) {
+      const autonomousAgent = require('./autonomousAgent');
+      const autoResult = await autonomousAgent.startAutonomousTask(lastUserMessage, userId);
+      return { 
+        text: `Autonomous Execution ${autoResult.success ? 'Completed' : 'Failed'}. Final Output:\n\`\`\`\n${autoResult.output || autoResult.error}\n\`\`\``, 
+        tokensUsed: 1500, 
+        confidenceScore: 99, 
+        sources: ['Devin Self-Healing VM'] 
+      };
+    } else if (taskType.isComplex) {
+      return await runMultiAgentOrchestrator({ systemPrompt, messages, energyLevel, domain, domains, userId });
     }
   }
 
@@ -209,7 +267,7 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
     maxOutputTokens: 8192 // Increased to prevent response cutoff
   };
 
-  let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+  let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const requestBody = {
     contents: messages,
@@ -223,7 +281,10 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
       { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
     ],
-    tools: toolService.geminiTools
+    tools: [
+      ...toolService.geminiTools,
+      { googleSearch: {} }
+    ]
   };
 
   let response;
@@ -264,6 +325,11 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
         continue;
       }
 
+      if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED' || error.message.includes('network')) {
+        console.warn(`[Key Manager] Network Error (${error.code}). Falling back to Offline Local LLM (Ollama)...`);
+        return await generateLocalLLMResponse({ messages, systemPrompt });
+      }
+
       throw error; // other errors
     }
   }
@@ -273,7 +339,7 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
          text: "Mowaa, Google Gemini servers are completely overloaded right now (503 High Demand). I tried 6 times but Google is down. Please try again in 1 minute! 💙",
          tokensUsed: 0,
          confidenceScore: 100,
-         sources: ['MEGHA Key Manager'],
+         sources: ['Closer Key Manager'],
          emergency: false
      };
   }
@@ -301,7 +367,7 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
 
     // Confidence & Metadata Extraction (Phase 7.1)
     let confidenceScore = 90 + Math.floor(Math.random() * 9); // Fallback confidence
-    let sources = ['MEGHA Logic Engine'];
+    let sources = ['Closer Logic Engine'];
     let emergency = false;
     const metadataMatch = text.match(/<metadata>([\s\S]*?)<\/metadata>/);
     if (metadataMatch) {
@@ -597,7 +663,7 @@ async function verifyFacts(originalText) {
   try {
     const { key } = _getAvailableKey();
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
-    const verifyPrompt = `You are the MEGHA Fact-Checking Engine. Review the following response for factual accuracy, hallucinations, and logic errors. 
+    const verifyPrompt = `You are the Closer Fact-Checking Engine. Review the following response for factual accuracy, hallucinations, and logic errors. 
 If it is correct, output the exact same text. If there are errors, output a corrected version of the text. Do not add conversational padding, JUST output the final verified text.\n\nText to verify:\n${originalText}`;
     
     const requestBody = {
@@ -616,7 +682,33 @@ If it is correct, output the exact same text. If there are errors, output a corr
 // ──────────────────────────────────────────────────────────────────────────
 // STREAM GENERATE AI RESPONSE (SSE)
 // ──────────────────────────────────────────────────────────────────────────
-async function generateAIResponseStream({ systemPrompt, messages, energyLevel, domain, domains }, onToken) {
+async function generateAIResponseStream({ systemPrompt, messages, energyLevel, domain, domains, offlineMode, model, forceFastModel }, onToken) {
+  if (offlineMode || process.env.USE_LOCAL_LLM === 'true') {
+    console.log('[Ollama] Routing request to local LLM...');
+    try {
+      const prompt = messages.map(m => m.parts[0].text).join('\n');
+      const ollamaUrl = 'http://localhost:11434/api/generate';
+      const axios = require('axios');
+      const response = await axios.post(ollamaUrl, {
+        model: 'llama3',
+        prompt: `SYSTEM: ${systemPrompt}\n\nUSER: ${prompt}\n\nASSISTANT:`,
+        stream: false
+      });
+      const text = response.data?.response || "Offline response generated.";
+      
+      // Fake the stream for the frontend UI
+      const words = text.split(' ');
+      for (const word of words) {
+        onToken(word + ' ');
+        await new Promise(r => setTimeout(r, 20));
+      }
+      return { text, tokensUsed: 0, confidenceScore: 100, sources: ['Local Brain (Offline)'] };
+    } catch (err) {
+      console.error('[Offline Mode Error] Ollama unreachable:', err.message);
+      onToken("[OFFLINE ERROR]: Unable to reach Local Brain. Ensure Ollama is running on localhost:11434 with 'llama3' model installed.");
+      return { text: "[OFFLINE ERROR]: Unable to reach Local Brain.", tokensUsed: 0, confidenceScore: 0, sources: [] };
+    }
+  }
   if (_keys.length === 0) {
     onToken("Nenu vinnanu... Eeroju ela undi neeku? Cheppu ra.");
     return { text: "Nenu vinnanu... Eeroju ela undi neeku? Cheppu ra.", tokensUsed: 25 };
@@ -639,7 +731,12 @@ async function generateAIResponseStream({ systemPrompt, messages, energyLevel, d
     maxOutputTokens: 8192
   };
 
-  let url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:streamGenerateContent?alt=sse&key=${apiKey}`;
+  let geminiModelName = 'gemini-2.5-flash';
+  if (model === 'gemini-2.5-pro') geminiModelName = 'gemini-2.5-pro';
+  else if (model === 'claude-3-5-sonnet') geminiModelName = 'gemini-2.5-pro'; // Fallback mapping
+  else if (model === 'gpt-4o') geminiModelName = 'gemini-2.5-pro'; // Fallback mapping
+
+  let url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModelName}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
   const requestBody = {
     contents: messages,
@@ -699,9 +796,32 @@ async function generateAIResponseStream({ systemPrompt, messages, energyLevel, d
   }
 }
 
+/**
+ * Self-Healing Executor (Devin-style cyclic loop)
+ * Wraps any async function and retries it up to 5 times if it fails,
+ * feeding the error back to the AI context to correct itself.
+ */
+async function executeWithSelfHealing(taskFunction, maxRetries = 5, onRetry = null) {
+  let attempt = 0;
+  let lastError = null;
+  while (attempt < maxRetries) {
+    try {
+      return await taskFunction(attempt, lastError);
+    } catch (err) {
+      attempt++;
+      lastError = err.message || err.toString();
+      console.warn(`[Self-Healing Loop] Attempt ${attempt}/${maxRetries} failed. Error: ${lastError}`);
+      if (onRetry) onRetry(attempt, lastError);
+      if (attempt === maxRetries) throw new Error(`Self-healing exhausted after ${maxRetries} attempts. Last error: ${lastError}`);
+      await new Promise(r => setTimeout(r, 2000 * attempt)); // Exponential backoff
+    }
+  }
+}
+
 module.exports = {
   generateAIResponse,
   generateAIResponseStream,
   checkResponseQuality,
-  buildReinforcement
+  buildReinforcement,
+  executeWithSelfHealing
 };

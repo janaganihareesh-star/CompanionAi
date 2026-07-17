@@ -34,7 +34,7 @@ export default function CalculatorPage() {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showSolutions, setShowSolutions] = useState({});
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const run = async () => {
     setLoading(true);

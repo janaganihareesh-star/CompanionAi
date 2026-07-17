@@ -16,7 +16,7 @@ export default function DataAnalysisPage() {
   const [insightsLoading, setInsightsLoading] = useState(false);
 
   const fileRef = useRef();
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const handleFileUpload = async (file) => {
     setFileName(file.name);

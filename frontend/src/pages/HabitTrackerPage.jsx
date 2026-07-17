@@ -13,7 +13,7 @@ export default function HabitTrackerPage() {
   const [completing, setCompleting] = useState(null);
   const [form, setForm] = useState({ name: '', description: '', type: 'build', frequency: 'daily', targetDays: 66, category: 'learning', color: '#6366f1', reminderTime: '' });
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
   const headers = { Authorization: `Bearer ${token}` };
 
   const load = async () => {

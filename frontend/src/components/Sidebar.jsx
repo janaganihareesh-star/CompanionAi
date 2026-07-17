@@ -1,12 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchRelationshipStats, fetchPreferences } from '../store/settingsSlice';
 import ThemeToggle from './ThemeToggle';
 import {
   Home, MessageSquare, Mic, Brain, Target, Compass,
-  FileText, Briefcase, GraduationCap, User, Settings, Sparkles, LogOut, Wand2
+  FileText, Briefcase, GraduationCap, User, Settings, Sparkles, LogOut, Wand2, Menu, X, FolderOpen
 } from 'lucide-react';
+import Tooltip from './Tooltip';
 import { logout } from '../store/authSlice';
 
 const NAV_ITEMS = [
@@ -14,6 +15,8 @@ const NAV_ITEMS = [
   { path: '/chat', label: 'Chat Companion', icon: MessageSquare },
   { path: '/goals', label: 'Goal Tracker', icon: Target },
   { path: '/dreamboard', label: 'Dream Board', icon: Compass },
+  { path: '/tools', label: 'App Store (Plugins)', icon: Wand2 },
+  { path: '/concept-lab', label: 'Concept Lab', icon: Sparkles },
   { path: '/profile', label: 'My Profile', icon: User },
   { path: '/settings', label: 'Settings', icon: Settings }
 ];
@@ -22,6 +25,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const user = useSelector((state) => state.auth.user);
   const stats = useSelector((state) => state.settings.stats);
@@ -44,16 +48,41 @@ export default function Sidebar() {
   const bondName = stats ? stats.bondLevelName : 'New Friend';
 
   return (
-    <aside className="w-64 bg-surface border-r border-border flex flex-col justify-between h-screen flex-shrink-0 z-30">
-      {/* Top Section */}
-      <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2 font-bold text-xl tracking-wide font-outfit text-text">
-            <Sparkles className="w-6 h-6 text-accent" />
-            <span>MEGHA AI</span>
+    <>
+      {/* Mobile Toggle Button (Visible only on small screens) */}
+      <button
+        onClick={() => setIsMobileOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-40 p-2.5 bg-surface border border-border rounded-xl text-text shadow-card hover:bg-panel transition-colors"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile Backdrop Overlay */}
+      {isMobileOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Container */}
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-surface border-r border-border flex flex-col justify-between h-screen z-50 transform transition-transform duration-300 md:relative md:translate-x-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        
+        {/* Top Section */}
+        <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2 font-bold text-xl tracking-wide font-outfit text-text">
+              <Sparkles className="w-6 h-6 text-accent" />
+              <span>CloserAI</span>
+            </div>
+            <button className="md:hidden p-1 text-muted" onClick={() => setIsMobileOpen(false)}>
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <ThemeToggle />
-        </div>
+          
+          <div className="hidden md:block absolute right-4 top-5">
+            <ThemeToggle />
+          </div>
 
         {/* User Card */}
         <div className="flex items-center gap-3 p-3 bg-panel rounded-xl border border-border">
@@ -76,7 +105,10 @@ export default function Sidebar() {
             return (
               <button
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  navigate(item.path);
+                  setIsMobileOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition cursor-pointer text-left ${
                   isActive
                     ? 'bg-panel border-l-4 border-accent text-accent'
@@ -108,6 +140,7 @@ export default function Sidebar() {
           </div>
         </button>
 
+
         {/* Bond Progress */}
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs font-semibold">
@@ -131,5 +164,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

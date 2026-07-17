@@ -8,7 +8,7 @@ export default function AIAvatar({
   emoji = '🤖',
   ringColor = 'border-border/80'
 }) {
-  const gender = localStorage.getItem('megha-ai-gender') || 'female';
+  const gender = localStorage.getItem('closer-ai-gender') || 'female';
   const avatarImg = gender === 'female' ? femaleFace : maleFace;
 
   return (
@@ -21,7 +21,11 @@ export default function AIAvatar({
       {/* Avatar Box */}
       <div className={`w-full h-full rounded-full border bg-panel flex items-center justify-center text-text z-10 relative overflow-hidden transition-all duration-300 ${ringColor}`}>
         {emoji === '🤖' ? (
-          <img src={avatarImg} alt="AI Avatar" className="w-full h-full object-cover" />
+          <img 
+            src={avatarImg} 
+            alt="AI Avatar" 
+            className="w-full h-full object-cover animate-swing drop-shadow-[0_0_8px_rgba(124,58,237,0.5)]" 
+          />
         ) : (
           <span className="select-none text-xl">{emoji}</span>
         )}

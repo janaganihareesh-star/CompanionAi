@@ -78,7 +78,7 @@ export default function OtpVerificationPage() {
       });
 
       // Save token for authenticated requests
-      localStorage.setItem('megha-token', res.token);
+      localStorage.setItem('closer-token', res.token);
 
       toast.success(res.message || 'OTP Verified! Redirecting to onboarding...');
       setSuccessBounce(true);
@@ -107,7 +107,7 @@ export default function OtpVerificationPage() {
         <div className="text-center space-y-2 mb-6">
           <div className="flex justify-center items-center gap-1.5 font-bold text-xl tracking-wide font-outfit text-text">
             <Sparkles className="w-6 h-6 text-accent" />
-            <span>MEGHA AI</span>
+            <span>CloserAI</span>
           </div>
           <h2 className="text-2xl font-bold font-outfit text-text">Verify Identity</h2>
           <p className="text-muted text-sm">Enter the verification code sent to your email.</p>

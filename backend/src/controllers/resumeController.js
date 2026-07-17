@@ -46,7 +46,7 @@ exports.uploadResume = async (req, res, next) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: 'raw',
-          folder: 'megha_resumes',
+          folder: 'closer_resumes',
           public_id: `resume_${userId}_${Date.now()}`
         },
         (error, result) => {

@@ -6,6 +6,7 @@ const Goal = require('../models/Goal');
 const ImportantDate = require('../models/ImportantDate');
 const WeeklyReflection = require('../models/WeeklyReflection');
 const socketConfig = require('../config/socket');
+const pushService = require('./pushService');
 
 // Generate and dispatch individual alerts
 async function createNotification({ userId, title, body, type = 'general' }) {
@@ -19,6 +20,9 @@ async function createNotification({ userId, title, body, type = 'general' }) {
 
     // Send real-time notification to the user's socket room if online
     socketConfig.emitToUser(userId, 'notification', newNotification);
+    
+    // Trigger Web Push Notification if subscribed
+    await pushService.sendPushNotification(userId, title, body);
 
     return newNotification;
   } catch (err) {

@@ -32,7 +32,7 @@ export default function PromptEngineerPage() {
   const [templates, setTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   useEffect(() => {
     if (tab === 'templates') {

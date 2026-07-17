@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  mode: localStorage.getItem('megha-theme') || 'dark',
+  mode: localStorage.getItem('closer-theme') || 'dark',
 };
 
 const themeSlice = createSlice({
@@ -10,11 +10,11 @@ const themeSlice = createSlice({
   reducers: {
     toggleTheme(state) {
       state.mode = state.mode === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('megha-theme', state.mode);
+      localStorage.setItem('closer-theme', state.mode);
     },
     setTheme(state, action) {
       state.mode = action.payload;
-      localStorage.setItem('megha-theme', state.mode);
+      localStorage.setItem('closer-theme', state.mode);
     },
   },
 });

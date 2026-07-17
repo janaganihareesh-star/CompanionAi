@@ -3,12 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MessageBubble from './MessageBubbleV2';
 import TypingIndicator from './TypingIndicator';
 import AIAvatar from './AIAvatar';
-import { Send, Paperclip, Mic, MicOff, Image as ImageIcon, X, Share2, MoreHorizontal, Pin, Archive, Trash2 } from 'lucide-react';
+import LiveVision from './LiveVision';
+import AgentTerminal from './AgentTerminal';
+import { Send, Paperclip, Mic, MicOff, Image as ImageIcon, X, Share2, MoreHorizontal, Pin, Archive, Trash2, Cloud } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import imageCompression from 'browser-image-compression';
 import { playPopSound, playChimeSound } from '../utils/soundUtils';
+import { extractTextFromFile } from '../utils/fileParser';
+import GoogleDrivePicker from './GoogleDrivePicker';
 
-export default function ChatBox({
+const ChatBox = React.memo(function ChatBox({
   inputText,
   setInputText,
   handleInputChange,
@@ -22,6 +26,7 @@ export default function ChatBox({
   onImageSelect,
   onVoiceRecordStart,
   onArtifactOpen,
+  onCanvasArtifactOpen,
   onOpenSources,
   currentConversation,
   onShareConversation,
@@ -29,17 +34,64 @@ export default function ChatBox({
   onArchive,
   onDelete,
   isSidebarOpen = true,
-  streamingMessage = ''
+  streamingMessage = '',
+  onCodeRun,
+  minimalMode,
+  socket,
+  onStopGeneration,
+  onContinue,
+  headerActions
 }) {
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const moreActionsRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   const [preRecordText, setPreRecordText] = useState('');
   const [interimText, setInterimText] = useState('');
   const recognitionRef = useRef(null);
   const prevIsSendingRef = useRef(isSending);
+  const [isLiveVision, setIsLiveVision] = useState(false);
+  const [latestVideoFrame, setLatestVideoFrame] = useState(null);
+  
+  const chatContainerRef = useRef(null);
+
+  // Robust Auto-Scroll Mechanism
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      // Use requestAnimationFrame to ensure DOM has painted the latest messages/bubbles
+      requestAnimationFrame(() => {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      });
+    }
+  }, [messages, isSending, streamingMessage]);
+
+  useEffect(() => {
+    if (window.visualViewport) {
+      const handleResize = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      };
+      window.visualViewport.addEventListener('resize', handleResize);
+      return () => window.visualViewport.removeEventListener('resize', handleResize);
+    }
+  }, []);
 
   useEffect(() => {
     if (prevIsSendingRef.current && !isSending) {
@@ -133,9 +185,9 @@ export default function ChatBox({
     setIsListening(false);
     const finalAutoSendText = (inputText + ' ' + interimText).trim();
     setInterimText('');
-    if (finalAutoSendText) {
-      handleSend(null, selectedImage, finalAutoSendText);
-      setSelectedImage(null);
+    if (finalAutoSendText || attachments.length > 0) {
+      handleSend(null, attachments, finalAutoSendText);
+      setAttachments([]);
     }
   };
 
@@ -151,38 +203,94 @@ export default function ChatBox({
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      try {
-        const options = {
-          maxSizeMB: 0.5,
-          maxWidthOrHeight: 1200,
-          useWebWorker: true,
-        };
+    if (!file) return;
+
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      
+      // Handle Images
+      if (['jpg', 'jpeg', 'png', 'webp', 'heic'].includes(ext)) {
+        const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1200, useWebWorker: true };
         const compressedFile = await imageCompression(file, options);
         const reader = new FileReader();
         reader.onload = () => {
-          setSelectedImage(reader.result);
-          if (onImageSelect) onImageSelect(reader.result, compressedFile);
+          setAttachments(prev => [...prev, { type: 'image', name: file.name, data: reader.result, mimeType: file.type }]);
         };
         reader.readAsDataURL(compressedFile);
-      } catch (err) {
-        console.error('Image compression failed', err);
-        toast.error('Failed to compress image');
+        return;
       }
+
+      // Handle Datasets (CSV, Excel, JSON) - Upload to backend for Deep Data Analysis
+      if (['csv', 'xlsx', 'xls', 'json'].includes(ext)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+          const token = localStorage.getItem('closer-token');
+          // Using standard fetch or axios, since we need to upload
+          const uploadRes = await fetch('/api/document/upload', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData
+          });
+          const data = await uploadRes.json();
+          if (data.success) {
+            setAttachments(prev => [...prev, { type: 'dataset', name: file.name, data: data.filePath }]);
+            toast.success('Dataset uploaded for Deep Data Analysis');
+          } else {
+            toast.error(data.message || 'Upload failed');
+          }
+        } catch (err) {
+           console.error(err);
+           toast.error('Failed to upload dataset');
+        }
+        return;
+      }
+
+      // Handle Text/Document parsing for PDF, DOCX, TXT, etc.
+      if (['pdf', 'docx', 'doc', 'txt', 'md', 'js', 'html', 'css'].includes(ext)) {
+        try {
+          const extractedText = await extractTextFromFile(file, ext);
+          setAttachments(prev => [...prev, { type: 'document', name: file.name, data: extractedText }]);
+        } catch (err) {
+          console.error('Text extraction failed', err);
+          toast.error(`Parse Error: ${err.message || 'Unknown error'}`);
+        }
+        return;
+      }
+
+      toast.error('Unsupported file format');
+
+    } catch (err) {
+      console.error('File processing failed', err);
+      toast.error('Could not process file');
     }
+  };
+
+  const handleGoogleDriveFilePicked = (driveAttachments) => {
+    // driveAttachments array contains { id, name, mimeType, url, source, size, content }
+    const newAttachments = driveAttachments.map(file => ({
+      type: 'document',
+      name: file.name,
+      data: file.content,
+      source: file.source,
+      url: file.url
+    }));
+    setAttachments(prev => [...prev, ...newAttachments]);
   };
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    handleSend(e, selectedImage);
-    setSelectedImage(null);
+    handleSend(e, attachments);
+    setAttachments([]);
+    setLatestVideoFrame(null); // Clear the frame after sending
   };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-bg justify-between relative overflow-hidden">
       {/* Header */}
-      <div className={`bg-surface border-b border-border/40 p-4 flex justify-between items-center z-10 shadow-sm transition-all duration-300 ${!isSidebarOpen ? 'pl-28' : ''}`}>
+      <div className={`bg-surface border-b border-border/40 p-4 flex justify-between items-center z-10 shadow-sm transition-all duration-300 ${!isSidebarOpen ? 'pl-28 md:pl-4' : ''}`}>
         <div className="flex items-center gap-3">
+          {headerActions && <div className="flex items-center">{headerActions}</div>}
           <AIAvatar size="w-10 h-10" emoji="🤖" status="online" />
           <div className="text-left">
             <h4 className="font-bold text-text font-outfit text-sm">{companionName}</h4>
@@ -192,6 +300,11 @@ export default function ChatBox({
         
         {/* Top Right Actions */}
         <div className="flex items-center gap-2">
+          {isOffline && (
+            <div className="flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/50 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold animate-pulse backdrop-blur-md">
+              <span>⚡ OFFLINE</span>
+            </div>
+          )}
           <button 
             onClick={() => {
               if (!currentConversation) {
@@ -247,7 +360,13 @@ export default function ChatBox({
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 transform-gpu flex flex-col" 
+        style={{ transform: 'translateZ(0)' }}
+      >
+        <AgentTerminal socket={socket} />
+        
         {isLoading ? (
           <div className="flex flex-col space-y-6 w-full animate-pulse">
             <div className="flex justify-end">
@@ -264,10 +383,10 @@ export default function ChatBox({
             </div>
           </div>
         ) : messages.length > 0 ? (
-          messages.map((msg) => <MessageBubble key={msg._id} message={msg} onArtifactOpen={onArtifactOpen} onOpenSources={onOpenSources} />)
+          messages.map((msg) => <MessageBubble key={msg._id} message={msg} onArtifactOpen={onArtifactOpen} onCanvasArtifactOpen={onCanvasArtifactOpen} onOpenCanvas={onArtifactOpen} onOpenSources={onOpenSources} />)
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4 text-muted">
-            <AIAvatar size="w-16 h-16" status={null} ringColor="border-border/30" />
+            <AIAvatar size="w-16 h-16" emoji="🤖" status={null} ringColor="border-border/30" />
             <div className="space-y-1">
               <h4 className="font-bold font-outfit text-text text-lg">Say something to {companionName}</h4>
               <p className="text-xs max-w-xs leading-relaxed text-muted">
@@ -283,6 +402,8 @@ export default function ChatBox({
             key="streaming-temp" 
             message={{ _id: 'streaming-temp', sender: 'ai', content: streamingMessage + '█', mood: 'neutral' }} 
             onArtifactOpen={onArtifactOpen} 
+            onCanvasArtifactOpen={onCanvasArtifactOpen}
+            onOpenCanvas={onArtifactOpen} 
             onOpenSources={onOpenSources} 
           />
         )}
@@ -290,26 +411,37 @@ export default function ChatBox({
         {/* Typing Indicator (Only show if not streaming yet) */}
         {isSending && !streamingMessage && <TypingIndicator />}
         
-        <div ref={messagesEndRef} />
+        {/* Continue Generating feature removed due to false positives */}        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Panel Box */}
       <div className="bg-surface border-t border-border/40 p-4">
-        {selectedImage && (
-          <div className="mb-3 relative inline-block">
-            <img src={selectedImage} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-border" />
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1 cursor-pointer"
-            >
-              <X className="w-3 h-3" />
-            </button>
+        {attachments.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {attachments.map((file, idx) => (
+              <div key={idx} className="relative inline-block">
+                {file.type === 'image' ? (
+                  <img src={file.data} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-border" />
+                ) : (
+                  <div className="h-16 w-16 flex flex-col items-center justify-center bg-gray-800 text-white rounded-lg border border-border text-xs text-center p-1 overflow-hidden">
+                    <span className="font-bold">{file.type.toUpperCase()}</span>
+                    <span className="text-[9px] truncate w-full">{file.name}</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                  className="absolute -top-2 -right-2 bg-rose-500 text-white rounded-full p-1 cursor-pointer z-10"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
-        <form onSubmit={handleFormSubmit} className="flex gap-2 items-center bg-panel border border-border rounded-xl px-2 py-2 focus-within:border-accent transition">
+        <div className="flex gap-2 items-center bg-panel border border-border rounded-xl px-2 py-2 focus-within:border-accent transition">
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileChange}
@@ -320,10 +452,30 @@ export default function ChatBox({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="p-2 text-muted hover:text-accent transition flex-shrink-0 cursor-pointer"
-            title="Attach Image"
+            title="Attach File"
           >
             <Paperclip className="w-5 h-5" />
           </motion.button>
+          
+          <GoogleDrivePicker onFilePicked={handleGoogleDriveFilePicked}>
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="p-2 text-muted hover:text-[#4285F4] transition flex-shrink-0 cursor-pointer"
+              title="Attach from Google Drive"
+            >
+              <Cloud className="w-5 h-5" />
+            </motion.div>
+          </GoogleDrivePicker>
+          
+          <LiveVision 
+            isActive={isLiveVision} 
+            setIsActive={setIsLiveVision} 
+            onFrameCaptured={(frameBase64) => {
+              // We store the latest frame so that when the user submits, it goes with the message
+              setLatestVideoFrame(frameBase64);
+            }} 
+          />
           
           {isListening ? (
             <div className="flex-1 flex items-center justify-between bg-rose-500/10 border border-rose-500/30 rounded-xl px-4 h-10 overflow-hidden">
@@ -355,6 +507,11 @@ export default function ChatBox({
           ) : (
             <>
               <textarea
+                name="chat-message-input"
+                id="chat-message-input"
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
                 value={inputText}
                 onChange={handleInputChange}
                 onKeyDown={(e) => {
@@ -379,19 +536,35 @@ export default function ChatBox({
                 <Mic className="w-5 h-5" />
               </motion.button>
               
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                type="submit"
-                disabled={!inputText.trim() && !selectedImage}
-                className="w-10 h-10 flex items-center justify-center bg-accent text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-600 transition shadow-md cursor-pointer flex-shrink-0"
-              >
-                <Send className="w-4 h-4 ml-0.5" />
-              </motion.button>
+              {isSending ? (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  type="button"
+                  onClick={onStopGeneration}
+                  className="w-10 h-10 flex items-center justify-center bg-rose-500/10 text-rose-500 border border-rose-500/30 rounded-xl hover:bg-rose-500/20 transition shadow-md cursor-pointer flex-shrink-0"
+                  title="Stop Generating"
+                >
+                  <div className="w-3.5 h-3.5 bg-rose-500 rounded-sm"></div>
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  type="button"
+                  onClick={handleFormSubmit}
+                  disabled={!inputText.trim() && attachments.length === 0}
+                  className="w-10 h-10 flex items-center justify-center bg-accent text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-600 transition shadow-md cursor-pointer flex-shrink-0"
+                >
+                  <Send className="w-4 h-4 ml-0.5" />
+                </motion.button>
+              )}
             </>
           )}
-        </form>
+        </div>
       </div>
     </div>
   );
-}
+});
+
+export default ChatBox;

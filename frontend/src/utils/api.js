@@ -7,7 +7,7 @@ const api = axios.create({
 // Request interceptor to attach the token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('megha-token');
+    const token = localStorage.getItem('closer-token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

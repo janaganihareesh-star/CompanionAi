@@ -1,102 +1,67 @@
 const axios = require('axios');
-const ConversationSummary = require('../models/ConversationSummary');
 const Message = require('../models/Message');
+const Conversation = require('../models/Conversation');
 
-async function generateSummary({ userId, month, year }) {
+/**
+ * Phase 3: Token Limit Management (Auto-Compression)
+ * If a conversation exceeds N messages, we compress the oldest chunk into a single "Summary Message"
+ * to save token context window while retaining semantic memory.
+ */
+async function compressConversation(conversationId, threshold = 30) {
   try {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const msgCount = await Message.countDocuments({ conversationId });
+    if (msgCount <= threshold) return; // No need to compress yet
 
-    // Load messages within the target month range
-    const messages = await Message.find({
-      userId,
-      timestamp: { $gte: startDate, $lt: endDate }
-    }).sort({ timestamp: 1 });
+    console.log(`[Token Compressor] Conversation ${conversationId} exceeded ${threshold} messages. Starting compression...`);
+    
+    // Fetch the oldest messages (leave the 10 most recent ones untouched)
+    const messagesToCompress = await Message.find({ conversationId })
+      .sort({ timestamp: 1 })
+      .limit(msgCount - 10);
 
-    const totalMessages = messages.length;
-    if (totalMessages === 0) {
-      return null;
-    }
+    if (messagesToCompress.length < 5) return; // Too few to bother compressing
 
-    // Capture representative samples (up to 100) for Gemini context mapping
-    const textSample = messages
-      .slice(0, 100)
-      .map(m => `${m.sender === 'user' ? 'User' : 'AI'}: ${m.content}`)
-      .join('\n');
+    // Combine them into a text blob
+    let conversationBlob = messagesToCompress.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
+    
+    const keys = (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '')
+      .split(',').map(k => k.trim()).filter(Boolean);
+    const apiKey = keys[0];
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'AIzaSyDummyKeyForGeminiAPI') {
-      const mockSummary = await ConversationSummary.create({
-        userId,
-        month,
-        year,
-        summary: 'Mock Summary: We spoke about goals, tech roadmaps, and career growth.',
-        achievements: ['Worked hard on career learning goals'],
-        moodChanges: 'Positive emotional stability',
-        keyTopics: ['MERN Dev', 'Mock Interviews', 'Daily Wellness'],
-        importantMemories: ['User shared their career ambitions'],
-        totalMessages
-      });
-      return mockSummary;
-    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    
+    const prompt = `Compress the following conversation history into a highly dense, factual summary. 
+Retain all important entities, decisions, user preferences, and context. Omit conversational fluff (greetings, confirmations). 
+Format it as a concise paragraph.
+\n\nHistory to compress:\n${conversationBlob}`;
 
-    const systemPrompt = `You are a helpful companion summarizing the past month's conversations.
-Extract key topics, personal memories, achievements discussed, and analyze the user's mood transition.
-Return ONLY a JSON response:
-{
-  "summary": "Provide a warm 3-4 sentence paragraph summary of what the user discussed...",
-  "achievements": ["List key achievements user shared or goal updates"],
-  "moodChanges": "Summarize how user mood changed",
-  "keyTopics": ["Topic A", "Topic B"],
-  "importantMemories": ["Specific memory user shared"]
-}
-Do not wrap in markdown code blocks.`;
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-
-    const requestBody = {
-      contents: [
-        { role: 'user', parts: [{ text: `Here is a sample transcripts of our discussions:\n${textSample}` }] }
-      ],
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      generationConfig: {
-        temperature: 0.3,
-        responseMimeType: 'application/json'
-      }
-    };
-
-    const response = await axios.post(url, requestBody);
-    const responseText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-
-    let parsedResult;
-    try {
-      parsedResult = JSON.parse(responseText);
-    } catch (parseErr) {
-      const cleaned = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      parsedResult = JSON.parse(cleaned);
-    }
-
-    const summaryObj = await ConversationSummary.create({
-      userId,
-      month,
-      year,
-      summary: parsedResult.summary || 'A wonderful month of bonding.',
-      achievements: parsedResult.achievements || [],
-      moodChanges: parsedResult.moodChanges || 'Balanced and calm.',
-      keyTopics: parsedResult.keyTopics || [],
-      importantMemories: parsedResult.importantMemories || [],
-      totalMessages
+    const response = await axios.post(url, {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1 }
     });
 
-    return summaryObj;
+    const summaryText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (summaryText) {
+      // 1. Delete old messages
+      const idsToDelete = messagesToCompress.map(m => m._id);
+      await Message.deleteMany({ _id: { $in: idsToDelete } });
+
+      // 2. Insert summary message at the top
+      await Message.create({
+        conversationId,
+        sender: 'system',
+        content: `[HISTORICAL SUMMARY]: ${summaryText}`,
+        timestamp: new Date(messagesToCompress[messagesToCompress.length - 1].timestamp.getTime() + 1000)
+      });
+      
+      console.log(`[Token Compressor] Successfully compressed ${messagesToCompress.length} messages into 1 summary block.`);
+    }
   } catch (err) {
-    console.error('Failed generating monthly summary:', err.message);
-    return null;
+    console.error('[Token Compressor] Failed to compress conversation:', err.message);
   }
 }
 
 module.exports = {
-  generateSummary
+  compressConversation
 };

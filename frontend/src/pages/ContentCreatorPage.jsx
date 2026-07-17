@@ -39,7 +39,7 @@ export default function ContentCreatorPage() {
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const generate = async () => {
     setLoading(true);

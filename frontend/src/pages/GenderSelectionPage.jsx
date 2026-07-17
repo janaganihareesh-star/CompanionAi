@@ -15,7 +15,7 @@ export default function GenderSelectionPage() {
   const handleNext = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('megha-token');
+      const token = localStorage.getItem('closer-token');
       await axios.post(
         '/api/profile/ai-gender',
         { aiGender: selectedGender },
@@ -23,7 +23,7 @@ export default function GenderSelectionPage() {
       );
       
       // Save locally to display the avatar in the next step immediately
-      localStorage.setItem('megha-ai-gender', selectedGender);
+      localStorage.setItem('closer-ai-gender', selectedGender);
       
       navigate('/onboarding/name');
     } catch (err) {
@@ -47,7 +47,7 @@ export default function GenderSelectionPage() {
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-[600px] mx-auto bg-surface/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_0_40px_rgba(167,139,250,0.15)] px-8 py-10 md:px-12 md:py-12 my-auto relative z-10 flex flex-col justify-center transform transition-all hover:shadow-[0_0_50px_rgba(167,139,250,0.25)]">
+      <div className="w-full max-w-[500px] mx-auto bg-surface/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_0_40px_rgba(167,139,250,0.15)] px-8 py-8 md:px-10 md:py-10 my-auto relative z-10 flex flex-col justify-center transform transition-all hover:shadow-[0_0_50px_rgba(167,139,250,0.25)]">
 
 
         <motion.div

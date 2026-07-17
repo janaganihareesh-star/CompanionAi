@@ -1,6 +1,6 @@
 {
-  "name": "MEGHA AI Operating System",
-  "short_name": "MEGHA AI",
+  "name": "CloserAI Operating System",
+  "short_name": "CloserAI",
   "description": "Your Universal Intelligent Companion OS",
   "start_url": "/",
   "display": "standalone",
@@ -13,6 +13,22 @@
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Chat",
+      "short_name": "Chat",
+      "description": "Start a new conversation",
+      "url": "/chat",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Canvas",
+      "short_name": "Canvas",
+      "description": "Open a collaborative workspace",
+      "url": "/canvas",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192" }]
     }
   ]
 }

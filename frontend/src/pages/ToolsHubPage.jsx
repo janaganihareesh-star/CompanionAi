@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Brain, Code2, Globe, Wand2, BarChart2, PenLine, GraduationCap, Calculator, FileSignature, Briefcase, ArrowRight } from 'lucide-react';
+import { FileText, Brain, Code2, Globe, Wand2, BarChart2, PenLine, GraduationCap, Calculator, FileSignature, Briefcase, ArrowRight, Calendar, MessageCircle } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 
 const TOOLS = [
@@ -15,7 +15,9 @@ const TOOLS = [
   { icon: <GraduationCap size={26} />, label: 'Academic Engine', sub: 'Assignment · Report · PPT · Viva', color: 'from-teal-500 to-emerald-600', path: '/tools/academic', badge: 'UG/PG/PhD' },
   { icon: <Calculator size={26} />, label: 'Math Solver', sub: 'Aptitude · Engineering · Finance', color: 'from-yellow-500 to-amber-600', path: '/tools/calculator', badge: 'Step-by-Step' },
   { icon: <FileSignature size={26} />, label: 'Official Drafts', sub: 'Leave · Complaint · NOC · Resignation', color: 'from-rose-500 to-red-600', path: '/tools/official-drafts', badge: '12 Letter Types' },
-  { icon: <Briefcase size={26} />, label: 'Business Engine', sub: 'Ideas · Plans · Pitch Deck · Marketing', color: 'from-purple-500 to-indigo-600', path: '/tools/business', badge: 'Startup Ready' }
+  { icon: <Briefcase size={26} />, label: 'Business Engine', sub: 'Ideas · Plans · Pitch Deck · Marketing', color: 'from-purple-500 to-indigo-600', path: '/tools/business', badge: 'Startup Ready' },
+  { icon: <Calendar size={26} />, label: 'Google Calendar Plugin', sub: 'Schedule · Manage Meetings · Reminders', color: 'from-blue-500 to-indigo-600', path: '/', badge: 'Live Plugin' },
+  { icon: <MessageCircle size={26} />, label: 'Slack Plugin', sub: 'Send Messages · Connect with Team', color: 'from-pink-500 to-red-600', path: '/', badge: 'Live Plugin' }
 ];
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
@@ -32,7 +34,7 @@ export default function ToolsHubPage() {
           <div className="tools-hub-hero">
             <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}>
               <div className="tools-hub-tag">🛠️ AI Tools Hub</div>
-              <h1 className="tools-hub-title">11 Powerful AI Engines</h1>
+              <h1 className="tools-hub-title">13 Powerful AI Engines & Plugins</h1>
               <p className="tools-hub-sub">Document Generation · Code Engine · Translator · Content · Academic · Business and more</p>
             </motion.div>
           </div>

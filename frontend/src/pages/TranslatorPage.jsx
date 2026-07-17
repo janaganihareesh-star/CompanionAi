@@ -24,7 +24,7 @@ export default function TranslatorPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const handleTranslate = async () => {
     if (!inputText.trim()) return;

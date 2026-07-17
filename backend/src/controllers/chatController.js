@@ -11,19 +11,15 @@ const milestoneService = require('../services/milestoneService');
 const summaryService = require('../services/summaryService');
 const queueService = require('../services/queueService');
 const ragService = require('../services/ragService');
+const memoryCompressor = require('../services/memoryCompressor');
 const socketConfig = require('../config/socket');
+const messageService = require('../services/messageService');
 
 exports.createConversation = async (req, res) => {
   try {
     const userId = req.user.id;
     const { title = 'New Chat' } = req.body;
-
-    const conversation = await Conversation.create({
-      userId,
-      title: title.substring(0, 30),
-      type: 'chat'
-    });
-
+    const conversation = await messageService.createConversation(userId, title);
     res.status(201).json({ success: true, conversation });
   } catch (error) {
     console.error('Error creating conversation:', error);
@@ -57,13 +53,13 @@ exports.sendMessage = async (req, res, next) => {
       conversationId = conversation._id;
     }
 
-    // 2. Save user message to Message collection
-    const userMsgObj = await Message.create({
+    // 2. Save user message to Message collection via messageService
+    const userMsgObj = await messageService.saveUserMessage({
       conversationId,
       userId,
-      sender: 'user',
-      content: message,
-      mood: 'neutral'
+      message,
+      mood: 'neutral',
+      imageBase64
     });
 
     // 3. Load user preferences for safety context
@@ -100,13 +96,17 @@ exports.sendMessage = async (req, res, next) => {
       if (safetyOverride.action === 'crisis_override') {
         conversation.crisisCount = (conversation.crisisCount || 0) + 1;
         if (conversation.crisisCount >= 3) {
-          const { sendEmergencyAlertEmail } = require('../utils/emailService');
+          const { sendEmergencyContactEmail, sendUserCareEmail } = require('../utils/emailService');
           
           if (userPref?.trustedContact1?.email) {
-            sendEmergencyAlertEmail(userPref.trustedContact1.email, userPref.trustedContact1.name, userName).catch(e => console.error(e));
+            sendEmergencyContactEmail(userPref.trustedContact1.email, userPref.trustedContact1.name, userName).catch(e => console.error(e));
           }
           if (userPref?.trustedContact2?.email) {
-            sendEmergencyAlertEmail(userPref.trustedContact2.email, userPref.trustedContact2.name, userName).catch(e => console.error(e));
+            sendEmergencyContactEmail(userPref.trustedContact2.email, userPref.trustedContact2.name, userName).catch(e => console.error(e));
+          }
+
+          if (req.user?.email) {
+            sendUserCareEmail(req.user.email, userName).catch(e => console.error(e));
           }
           
           conversation.crisisCount = 0; // Reset after sending to avoid spamming on every subsequent message
@@ -221,19 +221,20 @@ ${longTermMemories.map(m => `- ${m.timestamp.toLocaleDateString()}: "${m.content
         parts: parts
       });
 
-      // 7. Generate AI response
       let aiResult;
       try {
         aiResult = await aiService.generateAIResponse({
           ...promptData,
+          userId,
           energyLevel: finalEnergyLevel,
           domain: finalDomain,
           domains: finalDomains,
-          offlineMode: userPref?.offlineMode || false
+          offlineMode: userPref?.offlineMode || false,
+          model: model || 'gemini-1.5-flash'
         });
         aiResponseText = aiResult.text;
         finalConfidenceScore = aiResult.confidenceScore || 95;
-        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+        finalSources = aiResult.sources || ['Closer Logic Engine'];
         finalEmergency = aiResult.emergency || false;
       } catch (aiErr) {
         console.error('AI Generation Error:', aiErr.message);
@@ -271,7 +272,7 @@ ${longTermMemories.map(m => `- ${m.timestamp.toLocaleDateString()}: "${m.content
         });
         aiResponseText = aiResult.text;
         finalConfidenceScore = aiResult.confidenceScore || 95;
-        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+        finalSources = aiResult.sources || ['Closer Logic Engine'];
         finalEmergency = aiResult.emergency || false;
       }
       */
@@ -289,18 +290,19 @@ ${longTermMemories.map(m => `- ${m.timestamp.toLocaleDateString()}: "${m.content
         }
       }
 
-      // 10. Extract Memories in background using queueService
-      queueService.enqueue(async () => {
-        await memoryService.extractAndSaveMemories({ userId, userMessage: message });
-        await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
-      }, 'Memory and Knowledge Graph Extraction');
+      // 10. Extract Memories in background using queueService (RATE LIMITED)
+      if (message && message.split(/\s+/).length > 4) {
+        queueService.enqueue(async () => {
+          await memoryService.extractAndSaveMemories({ userId, userMessage: message });
+          await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
+        }, 'Memory and Knowledge Graph Extraction');
+      }
     }
 
-    // 11. Save AI message to Message collection
-    const aiMsgObj = await Message.create({
+    // 11. Save AI message to Message collection via messageService
+    const aiMsgObj = await messageService.saveAIMessage({
       conversationId,
       userId,
-      sender: 'ai',
       content: aiResponseText,
       mood: finalMood,
       confidenceScore: finalConfidenceScore,
@@ -420,21 +422,14 @@ exports.getMessages = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 30;
 
-    // Verify conversation ownership
-    const conversation = await Conversation.findOne({ _id: conversationId, userId });
-    if (!conversation) {
+    const messages = await messageService.getMessages(conversationId, userId, page, limit);
+    if (!messages) {
       return res.status(404).json({ success: false, message: 'Conversation not found.' });
     }
 
-    const messages = await Message.find({ conversationId, isDeleted: { $ne: true } })
-      .sort({ timestamp: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    // Return chronological array (reverse order of fetched)
     res.status(200).json({
       success: true,
-      messages: messages.reverse()
+      messages
     });
   } catch (err) {
     next(err);
@@ -447,11 +442,10 @@ exports.deleteConversation = async (req, res, next) => {
     const conversationId = req.params.id;
     const userId = req.user.id;
 
-    const conversation = await Conversation.findOneAndUpdate(
-      { _id: conversationId, userId },
-      { isDeleted: true },
-      { new: true }
-    );
+    const conversation = await Conversation.findOneAndDelete({ _id: conversationId, userId });
+    if (conversation) {
+      await Message.deleteMany({ conversationId });
+    }
 
     if (!conversation) {
       return res.status(404).json({ success: false, message: 'Conversation not found.' });
@@ -691,20 +685,15 @@ exports.executeCode = async (req, res, next) => {
 
 // POST /api/chat/send-stream
 exports.sendMessageStream = async (req, res, next) => {
-  // 1. Setup headers for SSE
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
+  const { getIO } = require('../config/socket');
 
   try {
-    const { message, imageBase64, images } = req.body;
+    const { message, imageBase64, attachments, model } = req.body;
     let { conversationId } = req.body;
     const userId = req.user.id;
 
     if (!message) {
-      res.write(`data: ${JSON.stringify({ error: 'Message content is required.' })}\n\n`);
-      return res.end();
+      return res.status(400).json({ error: 'Message content is required.' });
     }
 
     // 1. Create or use conversation
@@ -721,16 +710,18 @@ exports.sendMessageStream = async (req, res, next) => {
       conversationId = conversation._id;
     }
 
-    // Send metadata immediately so frontend knows conversationId
-    res.write(`data: ${JSON.stringify({ type: 'metadata', conversationId })}\n\n`);
+    // Send metadata via HTTP
+    res.status(200).json({ success: true, conversationId });
+    getIO().to(`user_${userId}`).emit('ai_stream_start', { conversationId });
 
-    // 2. Save user message
-    const userMsgObj = await Message.create({
+    // 2. Save user message via messageService
+    const userMsgObj = await messageService.saveUserMessage({
       conversationId,
       userId,
-      sender: 'user',
-      content: message,
-      mood: 'neutral'
+      message,
+      mood: 'neutral',
+      imageBase64,
+      attachments
     });
 
     const userPref = await UserPreference.findOne({ userId });
@@ -742,7 +733,7 @@ exports.sendMessageStream = async (req, res, next) => {
     const [safetyOverride, emotionResult, promptData, longTermMemories] = await Promise.all([
       safetyService.checkSafetyTriggers(message, { userName, aiName }),
       emotionService.detectEmotion({ userId, text: message }),
-      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId }),
+      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId, attachments }),
       ragService.searchGlobalMessageHistory(userId, message, conversationId, 1)
     ]);
 
@@ -757,7 +748,7 @@ exports.sendMessageStream = async (req, res, next) => {
     if (safetyOverride) {
       aiResponseText = safetyOverride.reply;
       finalMood = safetyOverride.action === 'crisis_override' ? 'sad' : finalMood;
-      res.write(`data: ${JSON.stringify({ type: 'chunk', text: aiResponseText })}\n\n`);
+      getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: aiResponseText });
     } else {
       finalMood = emotionResult.mood;
       finalEnergyLevel = emotionResult.energyLevel || 'medium';
@@ -781,6 +772,30 @@ exports.sendMessageStream = async (req, res, next) => {
       promptData.messages = [...historicalMessages, ...promptData.messages];
       
       const parts = [{ text: message }];
+      
+      // Handle legacy image support
+      if (imageBase64) {
+        try {
+          const matches = imageBase64.match(/^data:(image\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            parts.push({ inlineData: { mimeType: matches[1], data: matches[2] } });
+          }
+        } catch (e) { console.error("Failed to parse imageBase64", e); }
+      }
+
+      // Handle new multi-modal attachments array
+      if (attachments && Array.isArray(attachments)) {
+        attachments.forEach(file => {
+          if (file.type !== 'document') { // Only process media (images/PDFs) here
+            try {
+              const matches = file.data.match(/^data:([a-zA-Z0-9.-]+\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+              if (matches && matches.length === 3) {
+                parts.push({ inlineData: { mimeType: matches[1], data: matches[2] } });
+              }
+            } catch (e) { console.error("Failed to parse attachment", e); }
+          }
+        });
+      }
       queueService.enqueue(async () => {
         const embedding = await ragService.generateEmbedding(message);
         if (embedding && embedding.length > 0) { userMsgObj.embedding = embedding; await userMsgObj.save(); }
@@ -789,23 +804,78 @@ exports.sendMessageStream = async (req, res, next) => {
       promptData.messages.push({ role: 'user', parts });
 
       try {
+        const isShortMessage = message.trim().split(/\s+/).length <= 5;
+        
         const aiResult = await aiService.generateAIResponseStream({
           ...promptData,
           energyLevel: finalEnergyLevel,
           domain: finalDomain,
           domains: finalDomains,
-          offlineMode: userPref?.offlineMode || false
+          offlineMode: userPref?.offlineMode || false,
+          model: model || 'gemini-1.5-flash',
+          forceFastModel: isShortMessage
         }, (chunkText) => {
           aiResponseText += chunkText;
-          res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunkText })}\n\n`);
+          getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: chunkText });
         });
 
         finalConfidenceScore = aiResult.confidenceScore || 95;
-        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+        finalSources = aiResult.sources || ['Closer Logic Engine'];
       } catch (aiErr) {
         console.error('AI Stream Error:', aiErr.message);
-        res.write(`data: ${JSON.stringify({ error: 'AI Generation failed' })}\n\n`);
-        return res.end();
+        getIO().to(`user_${userId}`).emit('ai_stream_error', { error: 'AI Generation failed' });
+        return;
+      }
+
+      // [DATA ANALYSIS ENGINE] Check for autonomous python code execution
+      if (aiResponseText.includes('```python') && aiResponseText.includes('```')) {
+        const pythonCodeMatch = aiResponseText.match(/```python\n([\s\S]*?)```/);
+        if (pythonCodeMatch && pythonCodeMatch[1]) {
+          const pythonCode = pythonCodeMatch[1];
+          getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: '\n\n*> ⚙️ [Data Analysis Engine] Executing code...*\n\n' });
+          
+          try {
+             const execResult = await require('./codeController').executeCodeInternally('python', pythonCode);
+             let output = execResult.stdout || execResult.stderr || (execResult.error ? execResult.error.message : 'No output.');
+             
+             // Extract base64 chart if it exists
+             let chartBase64 = null;
+             const chartMatch = output.match(/CHART_BASE64:([a-zA-Z0-9+/=]+)/);
+             if (chartMatch) {
+                chartBase64 = chartMatch[1];
+                output = output.replace(chartMatch[0], '[Chart generated successfully and sent to user]');
+             }
+
+             // Now ask AI to summarize the result
+             promptData.messages.push({ role: 'model', parts: [{ text: aiResponseText }] });
+             promptData.messages.push({ role: 'user', parts: [{ text: `Execution Output:\n\`\`\`\n${output.substring(0, 5000)}\n\`\`\`\nPlease provide the final analysis based on this output.` }] });
+             
+             let resultHeader = `\n\n**Data Analysis Result:**\n`;
+             if (chartBase64) {
+                resultHeader += `\n![Data Chart](data:image/png;base64,${chartBase64})\n`;
+             }
+             
+             getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: resultHeader });
+             aiResponseText += resultHeader;
+             
+             await aiService.generateAIResponseStream({
+                ...promptData,
+                energyLevel: finalEnergyLevel,
+                domain: finalDomain,
+                domains: finalDomains,
+                offlineMode: userPref?.offlineMode || false,
+                model: model || 'gemini-1.5-flash',
+                forceFastModel: true
+             }, (chunkText) => {
+                aiResponseText += chunkText;
+                getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: chunkText });
+             });
+          } catch (err) {
+             const errorMsg = `\n\n*> Execution failed: ${err.message}*\n`;
+             aiResponseText += errorMsg;
+             getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: errorMsg });
+          }
+        }
       }
 
       const correctionTriggers = ['adi correct kaadhu', 'wrong ga remember', 'update chesuko', 'yeh galat hai', 'that is wrong', 'fix that', 'not ', 'change '];
@@ -819,16 +889,17 @@ exports.sendMessageStream = async (req, res, next) => {
         }
       }
 
-      queueService.enqueue(async () => {
-        await memoryService.extractAndSaveMemories({ userId, userMessage: message });
-        await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
-      }, 'Memory and Knowledge Graph Extraction');
+      if (message && message.split(/\s+/).length > 4) {
+        queueService.enqueue(async () => {
+          await memoryService.extractAndSaveMemories({ userId, userMessage: message });
+          await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
+        }, 'Memory and Knowledge Graph Extraction');
+      }
     }
 
-    const aiMsgObj = await Message.create({
+    const aiMsgObj = await messageService.saveAIMessage({
       conversationId,
       userId,
-      sender: 'ai',
       content: aiResponseText,
       mood: finalMood,
       confidenceScore: finalConfidenceScore,
@@ -861,12 +932,122 @@ exports.sendMessageStream = async (req, res, next) => {
       }
     }
 
-    res.write(`data: ${JSON.stringify({ type: 'done', messageId: aiMsgObj._id, conversationId, mood: finalMood })}\n\n`);
-    res.end();
+    getIO().to(`user_${userId}`).emit('ai_response', {
+      userMessage: userMsgObj,
+      aiMessage: aiMsgObj,
+      conversationId,
+      mood: finalMood
+    });
 
   } catch (err) {
     console.error('Stream Setup Error:', err);
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-    res.end();
+    require('../config/socket').getIO().to(`user_${req.user?.id}`).emit('ai_stream_error', { error: err.message });
+  }
+};
+
+exports.synthesizeVoice = async (req, res) => {
+  try {
+    const text = req.query.text || req.body.text;
+    if (!text) return res.status(400).json({ error: 'Text required' });
+    
+    const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
+    if (!elevenLabsKey) {
+      // Fallback to Microsoft Edge TTS if ElevenLabs isn't configured
+      const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
+      const tts = new MsEdgeTTS();
+      await tts.setMetadata('te-IN-ShrutiNeural', OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+      const { audioStream } = tts.toStream(text);
+      res.set('Content-Type', 'audio/mpeg');
+      res.set('Transfer-Encoding', 'chunked');
+      return audioStream.pipe(res);
+    }
+    
+    // Fetch user's custom voice ID
+    const UserPreference = require('../models/UserPreference');
+    const pref = await UserPreference.findOne({ userId: req.user.id });
+    const voiceId = pref?.elevenLabsVoiceId || 'EXAVITQu4vr4xnSDxMaL'; // User's custom ID or default
+    
+    // ElevenLabs Streaming
+    const axios = require('axios');
+    const response = await axios({
+      method: 'POST',
+      url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+      data: { text: text, model_id: 'eleven_multilingual_v2' },
+      headers: {
+        'Accept': 'audio/mpeg',
+        'xi-api-key': elevenLabsKey,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'stream'
+    });
+    
+    res.set({ 'Content-Type': 'audio/mpeg', 'Transfer-Encoding': 'chunked' });
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('TTS Error:', err.message);
+    res.status(500).json({ error: 'TTS Synthesis failed' });
+  }
+};
+
+exports.inviteToGroup = async (req, res, next) => {
+  res.status(501).json({ error: 'Not Implemented (Lost during git revert)' });
+};
+
+// Phase 6: Hallucination Management (Fact-Checker)
+exports.verifyFact = async (req, res) => {
+  try {
+    const { fact } = req.body;
+    if (!fact) return res.status(400).json({ error: 'Fact is required' });
+
+    // 1. Web Search for the fact (using tavily if configured, or fallback)
+    const { searchWeb } = require('../services/webSearchService');
+    const searchResults = await searchWeb(fact, 3);
+    const searchContext = searchResults.map(r => `Source: ${r.url}\nSnippet: ${r.snippet}`).join('\n\n');
+
+    // 2. Secondary LLM Verification Prompt
+    const verificationPrompt = `
+      You are a strict, objective Fact-Checking AI. 
+      Analyze the following claim and verify its accuracy using the provided web search context.
+      
+      Claim to verify: "${fact}"
+      
+      Search Context:
+      ${searchContext || 'No web results found.'}
+      
+      Provide your response in the following JSON format:
+      {
+        "status": "Verified" | "False" | "Partially True" | "Unverifiable",
+        "explanation": "A concise explanation of why.",
+        "sources": ["List of URLs used to verify"]
+      }
+    `;
+
+    const aiService = require('../services/aiService');
+    const result = await aiService.generateContent(
+      [{ text: verificationPrompt }],
+      'gemini-1.5-flash',
+      [],
+      [],
+      true // Expect JSON response
+    );
+
+    let verificationData;
+    try {
+      verificationData = JSON.parse(result.text);
+    } catch (e) {
+      // Fallback parser
+      const match = result.text.match(/\{[\s\S]*\}/);
+      if (match) {
+        verificationData = JSON.parse(match[0]);
+      } else {
+        verificationData = { status: 'Unverifiable', explanation: 'Failed to parse AI verification response.', sources: [] };
+      }
+    }
+
+    res.json(verificationData);
+
+  } catch (err) {
+    console.error('Verify Fact Error:', err);
+    res.status(500).json({ error: 'Verification failed' });
   }
 };

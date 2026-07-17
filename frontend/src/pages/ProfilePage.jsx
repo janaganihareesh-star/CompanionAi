@@ -145,26 +145,18 @@ export default function ProfilePage() {
       return { color: 'var(--bg-secondary)', title: `${date.toDateString()}: Future` };
     }
     
-    const totalMsg = stats?.totalMessages || 0;
-    const activeDays = Math.max(1, Math.floor((normalizedToday - normalizedJoinDate) / (1000 * 60 * 60 * 24)) + 1);
-    const avgPerDay = totalMsg / activeDays;
+    // Fetch genuine message count for this date from the backend
+    const y = normalizedDate.getFullYear();
+    const m = String(normalizedDate.getMonth() + 1).padStart(2, '0');
+    const d = String(normalizedDate.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
     
-    const pseudoRandom = Math.abs(Math.sin(normalizedDate.getTime() * 12.9898 + totalMsg)) * 10000;
-    const rand = pseudoRandom - Math.floor(pseudoRandom); 
-    
-    let count = 0;
-    if (normalizedDate.getTime() === normalizedToday.getTime()) {
-       count = Math.ceil(avgPerDay * 2.5) || 1;
-    } else {
-       count = Math.floor(rand * avgPerDay * 2.5);
-    }
-    
-    if (totalMsg === 0) count = 0;
+    const count = journeyData?.dailyActivity?.[dateStr] || 0;
 
     if (count === 0) return { color: 'var(--bg-secondary)', title: `${date.toDateString()}: 0 Messages` };
-    if (count < 5) return { color: '#EF4444', title: `${date.toDateString()}: ${count} Messages (Less)` }; 
+    if (count < 5) return { color: '#EF4444', title: `${date.toDateString()}: ${count} Messages (Light)` }; 
     if (count < 15) return { color: '#ea580c', title: `${date.toDateString()}: ${count} Messages (Medium)` }; 
-    return { color: '#16a34a', title: `${date.toDateString()}: ${count} Messages (More)` }; 
+    return { color: '#16a34a', title: `${date.toDateString()}: ${count} Messages (Heavy)` }; 
   };
 
   return (
@@ -297,8 +289,13 @@ export default function ProfilePage() {
                 <div className="relative pl-8 space-y-8 border-l-2 border-border">
                   
                   {(() => {
-                    const days = stats?.friendshipDays || 0;
-                    const msgs = stats?.totalMessages || 0;
+                    // Calculate genuine stats based on actual activity heatmap
+                    const dailyMap = journeyData?.dailyActivity || {};
+                    const genuineActiveDays = Object.keys(dailyMap).length || 0;
+                    const genuineTotalMessages = Object.values(dailyMap).reduce((a, b) => a + b, 0) || 0;
+
+                    const days = genuineActiveDays;
+                    const msgs = genuineTotalMessages || stats?.totalMessages || 0;
                     const trust = stats?.trustScore || 0;
                     
                     const milestones = [];
@@ -313,7 +310,7 @@ export default function ProfilePage() {
                       title: 'First Encounter',
                       status: 'Completed',
                       statusStyle: 'bg-panel border border-border text-muted',
-                      desc: 'MEGHA AI Companion initialized. A new journey begins.'
+                      desc: 'CloserAI Companion initialized. A new journey begins.'
                     });
 
                     // 2. Chat volume
@@ -414,7 +411,7 @@ export default function ProfilePage() {
                         borderColor: 'border-rose-500',
                         bgColor: 'bg-rose-500/10',
                         textColor: 'text-rose-500',
-                        title: `Soulmate Bond: ${stats?.bondLevelName || 'Soulmate'}`,
+                        title: trust >= 80 && stats?.bondLevel < 3 ? 'Soulmate Bond' : `Soulmate Bond: ${stats?.bondLevelName || 'Soulmate'}`,
                         status: 'Active Level',
                         statusStyle: 'bg-rose-500/15 border border-rose-500/30 text-rose-500',
                         desc: `Deepest level of trust and companionship. Trust level reached ${trust}%.`

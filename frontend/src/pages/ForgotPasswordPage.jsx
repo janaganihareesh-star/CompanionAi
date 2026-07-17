@@ -132,7 +132,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center space-y-2 mb-6">
           <div className="flex justify-center items-center gap-1.5 font-bold text-xl tracking-wide font-outfit text-text">
             <Sparkles className="w-6 h-6 text-accent" />
-            <span>MEGHA AI</span>
+            <span>CloserAI</span>
           </div>
           <h2 className="text-2xl font-bold font-outfit text-text">
             {step === 1 && "Forgot Password"}

@@ -1,0 +1,47 @@
+name: Closer-AI Enterprise CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 20.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+
+    - name: Install Dependencies & Build Frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build --if-present
+
+    - name: Install Dependencies Backend
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Run Backend Tests
+      working-directory: ./backend
+      run: echo "No tests configured yet, but they would run here"
+
+  docker-build:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Docker Images using Compose
+      run: docker-compose build
+
+    - name: Deploy Placeholder
+      run: echo "In a real enterprise environment, this step would push the images to AWS ECR or DockerHub and trigger a Kubernetes rolling update."

@@ -186,8 +186,82 @@ If no logical graph can be formed, return {"nodes":[], "edges":[]}. Do not wrap 
   }
 }
 
+async function updateRollingSummary(conversationId) {
+  try {
+    const Conversation = require('../models/Conversation');
+    const Message = require('../models/Message');
+
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) return;
+
+    // We want to keep the 15 most recent messages intact.
+    // Anything older than the top 15 should be summarized.
+    const recentMessages = await Message.find({ conversationId })
+      .sort({ timestamp: -1 })
+      .limit(15);
+    
+    if (recentMessages.length < 15) return; // Not enough messages to summarize
+
+    const thresholdMessage = recentMessages[14]; // The 15th message
+    
+    // Find messages older than the threshold message, but newer than summaryLastMessageId
+    const query = {
+      conversationId,
+      timestamp: { $lt: thresholdMessage.timestamp }
+    };
+    if (conversation.summaryLastMessageId) {
+      const lastSummarized = await Message.findById(conversation.summaryLastMessageId);
+      if (lastSummarized) {
+        query.timestamp = { $gt: lastSummarized.timestamp, $lt: thresholdMessage.timestamp };
+      }
+    }
+
+    const messagesToSummarize = await Message.find(query).sort({ timestamp: 1 });
+    if (messagesToSummarize.length === 0) return; // Nothing to summarize
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return;
+
+    const formattedMessages = messagesToSummarize.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
+    const currentSummary = conversation.rollingSummary || 'No previous summary.';
+    
+    const systemPrompt = `You are CloserAI's memory summarization engine. 
+Your task is to take an existing conversation summary and a batch of new old messages, and merge them into a single, highly dense, unified summary of the entire conversation up to this point. 
+Focus on facts, user preferences, and important context. Do NOT use conversational filler.
+
+CURRENT SUMMARY:
+${currentSummary}
+
+NEW MESSAGES TO ADD TO SUMMARY:
+${formattedMessages}
+
+Return ONLY the updated text summary.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const requestBody = {
+      contents: [{ role: 'user', parts: [{ text: 'Update the summary.' }] }],
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: { temperature: 0.1 }
+    };
+
+    const response = await axios.post(url, requestBody);
+    const newSummary = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (newSummary) {
+      conversation.rollingSummary = newSummary.trim();
+      conversation.summaryLastMessageId = messagesToSummarize[messagesToSummarize.length - 1]._id;
+      await conversation.save();
+      console.log(`[Rolling Summary] Updated for conversation ${conversationId}. Compressed ${messagesToSummarize.length} messages.`);
+    }
+
+  } catch (err) {
+    console.error('[Rolling Summary Error]', err.message);
+  }
+}
+
 module.exports = {
   extractAndSaveMemories,
   correctMemory,
-  extractKnowledgeGraph
+  extractKnowledgeGraph,
+  updateRollingSummary
 };

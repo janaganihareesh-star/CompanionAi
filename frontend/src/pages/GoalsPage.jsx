@@ -22,6 +22,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
+import SkeletonLoader from '../components/SkeletonLoader';
 import toast from 'react-hot-toast';
 
 export default function GoalsPage() {
@@ -239,9 +240,8 @@ export default function GoalsPage() {
         {/* Goals List Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isLoading && !breakingDownId ? (
-            <div className="col-span-full py-12 flex justify-center items-center gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-accent" />
-              <span className="text-muted text-sm">Fetching your roadmap goals...</span>
+            <div className="col-span-full py-12">
+              <SkeletonLoader lines={6} />
             </div>
           ) : currentGoals && currentGoals.length > 0 ? (
             <AnimatePresence mode="popLayout">

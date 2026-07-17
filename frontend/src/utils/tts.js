@@ -24,15 +24,25 @@ class TTSManager {
       this.onEndCallbacks.forEach(cb => cb());
       return;
     }
+    const { text, lang } = this.audioQueue.shift();
+
+    // Check for native speech synthesis support to reduce latency
+    if (window.speechSynthesis && !text.includes('```')) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang === 'te' ? 'te-IN' : 'en-US';
+      utterance.onend = () => this._playNext();
+      utterance.onerror = () => this._playNext();
+      
+      this.isPlaying = true;
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
 
     this.isPlaying = true;
-    const { text, lang } = this.audioQueue.shift();
     
-    // Pass the text to our backend which will securely proxy the audio stream
+    // Fallback to backend TTS
     const url = `/api/tts/stream?text=${encodeURIComponent(text)}&lang=${lang}`;
-    
     this.currentAudio = new Audio(url);
-    // Neural voices are already perfectly paced; playbackRate distortion causes chipmunking and artifacts
     
     this.currentAudio.onended = () => {
       this._playNext();

@@ -11,6 +11,7 @@ import { Menu, Sparkles, Share2, MoreHorizontal, Pin, Archive, Trash2 } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast, Toaster } from 'react-hot-toast';
 import VoiceCallOverlay from '../components/VoiceCallOverlay';
+import LiveNativeVoice from '../components/LiveNativeVoice';
 
 export default function VoicePage() {
   const navigate = useNavigate();
@@ -25,12 +26,16 @@ export default function VoicePage() {
 
   const pref = useSelector((state) => state.settings.preferences);
   const mode = useSelector((state) => state.theme?.mode || 'dark');
-  const companionName = pref ? pref.aiName : 'MEGHA';
+  const companionName = pref ? pref.aiName : 'Closer';
   const isDark = mode === 'dark';
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [useNativeAudio, setUseNativeAudio] = useState(false);
+  
+  const appStoreSafeMode = useSelector((state) => state.settings?.preferences?.appStoreSafeMode || false);
+  
   const moreActionsRef = useRef(null);
 
   useEffect(() => {
@@ -141,6 +146,15 @@ export default function VoicePage() {
           </div>
           
           <div className="flex items-center gap-2 pointer-events-auto">
+            <button
+              onClick={() => setUseNativeAudio(!useNativeAudio)}
+              className={`px-3 py-2 flex items-center gap-2 text-sm font-semibold border rounded-xl backdrop-blur-sm transition-colors cursor-pointer ${useNativeAudio ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'border-border/40 text-muted hover:bg-surface bg-surface/50'}`}
+              title="Toggle End-to-End Native Audio (Bidi WebSockets)"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">{useNativeAudio ? 'Native Audio Active' : 'Enable Native Audio'}</span>
+            </button>
+
             <button 
               onClick={() => {
                 if (!currentConversation) {
@@ -217,12 +231,24 @@ export default function VoicePage() {
 
         {/* Inline Voice OS Duplex Area */}
         <div className="flex-1 w-full h-full relative">
-          <VoiceCallOverlay 
-            onClose={() => navigate('/')} 
-            currentConversation={currentConversation} 
-            companionName={companionName}
-            isInline={true}
-          />
+          {appStoreSafeMode ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+              <div className="w-24 h-24 mb-6 rounded-full bg-surface border-4 border-border flex items-center justify-center shadow-xl">
+                <ShieldAlert className="w-10 h-10 text-muted" />
+              </div>
+              <h2 className="text-2xl font-bold font-outfit text-text mb-3">Feature Unavailable</h2>
+              <p className="text-muted max-w-md">Live Voice modes are disabled while App Store Safe Mode is active to comply with standard review guidelines.</p>
+            </div>
+          ) : useNativeAudio ? (
+            <LiveNativeVoice companionName={companionName} />
+          ) : (
+            <VoiceCallOverlay 
+              onClose={() => navigate('/')} 
+              currentConversation={currentConversation} 
+              companionName={companionName}
+              isInline={true}
+            />
+          )}
         </div>
       </div>
     </div>

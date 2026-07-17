@@ -37,7 +37,7 @@ export default function BusinessPage() {
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const execute = async () => {
     setLoading(true);
@@ -192,7 +192,7 @@ export default function BusinessPage() {
               <>
                 <div className="bus-field-group">
                   <label>Business / Brand Name</label>
-                  <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="e.g. MEGHA AI" />
+                  <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="e.g. CloserAI" />
                 </div>
                 <div className="bus-field-group">
                   <label>Product / Service description</label>

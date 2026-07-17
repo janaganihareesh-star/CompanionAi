@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MessageSquarePlus, Trash2, Pin, Archive, Settings, User, Compass, Brain, Mic, Wand2, Briefcase, FileText, Target, Home, X, PanelLeftClose, PanelLeft, MoreHorizontal, GraduationCap, Share2, Edit2, Check } from 'lucide-react';
+import { Search, MessageSquarePlus, Trash2, Pin, Archive, Settings, User, Compass, Brain, Mic, Wand2, Briefcase, FileText, Target, Home, X, PanelLeftClose, PanelLeft, MoreHorizontal, GraduationCap, Share2, Edit2, Check, Menu, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AIAvatar from './AIAvatar';
+import Tooltip from './Tooltip';
 
 export default function ChatSidebar({ 
   isOpen, 
@@ -17,7 +19,9 @@ export default function ChatSidebar({
   onRename,
   onPin,
   onArchive,
-  onShare
+  onShare,
+  handleNewGroup,
+  companionName = 'CloserAI'
 }) {
   const navigate = useNavigate();
   const [showApps, setShowApps] = useState(false);
@@ -35,13 +39,22 @@ export default function ChatSidebar({
     return () => clearTimeout(handler);
   }, [localSearch, setSearchQuery]);
 
-  const filteredConversations = conversations.filter(c =>
-    c.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConversations = (conversations || []).filter(c => {
+    const title = c?.title || 'New Chat';
+    const query = searchQuery || '';
+    return title.toLowerCase().includes(query.toLowerCase());
+  });
 
   const pinnedChats = filteredConversations.filter(c => c.isPinned && !c.isArchived);
   const recentChats = filteredConversations.filter(c => !c.isPinned && !c.isArchived);
   const archivedChats = filteredConversations.filter(c => c.isArchived);
+
+  const folderGroups = recentChats.reduce((acc, chat) => {
+    const folder = chat.folder || 'General';
+    if (!acc[folder]) acc[folder] = [];
+    acc[folder].push(chat);
+    return acc;
+  }, {});
 
   // When collapsed, we only show a floating button in the ChatPage.
   if (!isOpen) return null;
@@ -63,22 +76,22 @@ export default function ChatSidebar({
   );
 
   return (
-    <div className="w-64 glass-panel border border-border/20 rounded-2xl flex flex-col h-[calc(100vh-2rem)] my-4 mx-4 flex-shrink-0 z-40 overflow-hidden shadow-2xl">
+    <div className="w-64 bg-surface border-r border-border/20 flex flex-col h-full flex-shrink-0 z-40 overflow-hidden shadow-2xl">
       {/* Top Bar: Logo & Close */}
       <div className="p-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
-          <div className="w-7 h-7 bg-text text-bg rounded-full flex items-center justify-center font-bold font-outfit text-sm">
-            M
-          </div>
-          <span className="font-bold text-text text-sm">MEGHA AI</span>
+        <div className="flex items-center gap-2 cursor-pointer font-bold tracking-wide font-outfit text-text" onClick={() => navigate('/home')}>
+          <Sparkles className="w-6 h-6 text-accent" />
+          <span className="font-bold text-text text-lg">CloserAI</span>
         </div>
-        <button 
-          onClick={onClose}
-          className="p-1.5 text-muted hover:text-text rounded-md transition-colors cursor-pointer"
-          title="Close sidebar"
-        >
-          <PanelLeftClose className="w-5 h-5" />
-        </button>
+        <Tooltip text="Close Sidebar" position="right">
+          <button 
+            onClick={onClose}
+            className="p-1.5 text-muted hover:text-text hover:bg-panel rounded-lg transition-colors cursor-pointer"
+          >
+            <PanelLeftClose className="w-5 h-5" />
+          </button>
+        </Tooltip>
+
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 space-y-4 pb-4 custom-scrollbar">
@@ -94,10 +107,20 @@ export default function ChatSidebar({
             </div>
             New chat
           </button>
+          <button
+            onClick={handleNewGroup}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-panel rounded-lg transition-colors cursor-pointer"
+          >
+            <div className="w-5 h-5 bg-emerald-500 text-white rounded-full flex items-center justify-center">
+              <span className="text-xs font-bold">+</span>
+            </div>
+            New Team Workspace
+          </button>
           
           <div className="relative">
             <Search className="w-4 h-4 text-muted absolute left-3 top-2.5" />
             <input
+              id="global-search-input"
               type="text"
               placeholder="Search chats"
               value={localSearch}
@@ -117,15 +140,18 @@ export default function ChatSidebar({
           </div>
         )}
 
-        {/* Recent Chats */}
-        {recentChats.length > 0 && (
-          <div className="mt-6">
-            <h3 className="px-3 text-xs font-semibold text-muted mb-2">Recents</h3>
+        {/* Folder Groups */}
+        {Object.entries(folderGroups).map(([folderName, chats]) => (
+          <div key={folderName} className="mt-6">
+            <h3 className="px-3 text-xs font-semibold text-muted mb-2 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-accent"></span>
+              {folderName}
+            </h3>
             <div className="space-y-0.5">
-              {recentChats.map(renderChatItem)}
+              {chats.map(renderChatItem)}
             </div>
           </div>
-        )}
+        ))}
 
         {/* Archived Chats */}
         {archivedChats.length > 0 && (

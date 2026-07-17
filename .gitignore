@@ -37,3 +37,18 @@ revert_gemini_model.js
 revert_to_2_5.js
 update_gemini_model_2_0.js
 update_model_final.js
+
+# Backend specific
+backend/uploads/
+backend/temp_code_exec/
+backend/.history/
+backend/data/
+backend/test*.js
+backend/recover.js
+backend/refactor_chat.js
+backend/verify_user.js
+
+# Frontend specific
+frontend/vite.config.js.timestamp-*.mjs
+frontend/.env
+backend/.env

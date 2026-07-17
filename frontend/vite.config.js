@@ -4,7 +4,11 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const isAppStoreSafe = process.env.VITE_APP_STORE_SAFE === 'true';
+
+  return {
+  base: './',
   plugins: [
     react(), 
     tailwindcss(),
@@ -12,11 +16,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       workbox: {
-        maximumFileSizeToCacheInBytes: 10000000 // 10 MB limit
+        maximumFileSizeToCacheInBytes: 15000000, // 15 MB limit
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,ttf,woff,woff2}'] // Aggressive Offline Caching
       },
       manifest: {
-        name: 'MEGHA AI',
-        short_name: 'MEGHA AI',
+        name: 'CloserAI',
+        short_name: 'CloserAI',
         description: 'Advanced AI Assistant',
         theme_color: '#7C3AED',
         background_color: '#0F0F1A',
@@ -36,6 +41,22 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      external: isAppStoreSafe ? ['@capacitor/core', '@capacitor/filesystem', 'child_process'] : [],
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-redux': ['@reduxjs/toolkit', 'react-redux'],
+          'vendor-ui': ['framer-motion', 'lucide-react', 'react-hot-toast'],
+          'vendor-pdf': ['html2pdf.js', 'jspdf', 'html2canvas'],
+          'vendor-ppt': ['pptxgenjs'],
+          'vendor-code': ['@monaco-editor/react', 'react-syntax-highlighter', '@codesandbox/sandpack-react']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
   server: {
     port: 5173,
     proxy: {
@@ -48,5 +69,6 @@ export default defineConfig({
         ws: true,
       },
     },
-  },
+  }
+  };
 });

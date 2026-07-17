@@ -24,6 +24,14 @@ const MessageSchema = new mongoose.Schema({
     type: String,
     default: 'neutral'
   },
+  imageBase64: {
+    type: String
+  },
+  attachments: [{
+    name: String,
+    data: String,
+    type: { type: String, default: 'document' }
+  }],
   confidenceScore: {
     type: Number,
     min: 0,

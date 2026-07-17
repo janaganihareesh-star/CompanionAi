@@ -136,7 +136,7 @@ export default function DreamBoardPage() {
   }) : [];
 
   return (
-    <div className="flex min-h-screen bg-bg text-text">
+    <div className="flex h-screen overflow-hidden bg-bg text-text">
       <Sidebar />
 
       <main className="flex-1 overflow-y-auto p-6 space-y-6">

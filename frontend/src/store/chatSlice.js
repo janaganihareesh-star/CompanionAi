@@ -6,6 +6,11 @@ const initialState = {
   conversations: [],
   currentConversation: null,
   messages: [],
+  streamingMessage: '',
+  liveCodeStream: '',
+  emergencyMode: false,
+  page: 1,
+  hasMore: true,
   isLoading: false,
   isSending: false,
   error: null
@@ -43,10 +48,25 @@ export const fetchMessages = createAsyncThunk(
   async (conversationId, { getState, rejectWithValue }) => {
     try {
       const { token } = getState().auth;
-      const res = await axios.get(`/api/chat/${conversationId}/messages`, getAuthConfig(token));
-      return res.data.messages; // returns chronological message list
+      const res = await axios.get(`/api/chat/${conversationId}/messages?page=1&limit=30`, getAuthConfig(token));
+      return { messages: res.data.messages, page: 1 };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to load chat history.');
+    }
+  }
+);
+
+export const fetchMoreMessages = createAsyncThunk(
+  'chat/fetchMoreMessages',
+  async (conversationId, { getState, rejectWithValue }) => {
+    try {
+      const state = getState().chat;
+      const nextPage = state.page + 1;
+      const { token } = getState().auth;
+      const res = await axios.get(`/api/chat/${conversationId}/messages?page=${nextPage}&limit=30`, getAuthConfig(token));
+      return { messages: res.data.messages, page: nextPage };
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to load more messages.');
     }
   }
 );
@@ -64,75 +84,32 @@ export const sendMessage = createAsyncThunk(
   }
 );
 
-export const sendMessageStreamAsync = ({ conversationId, message, imageBase64 }) => async (dispatch, getState) => {
-  dispatch(sendMessage.pending({ meta: { arg: { message } } }));
+export const sendMessageStreamAsync = ({ conversationId, message, attachments, imageBase64 }) => async (dispatch, getState) => {
+  // Dispatch pending action with a dummy requestId 'stream-req' and the args.
+  // This correctly populates action.meta.arg so the optimistic UI reducer works.
+  dispatch(sendMessage.pending('stream-req', { message, attachments, imageBase64 }));
 
   try {
     const { token } = getState().auth;
     
-    // Default config using fetch
-    const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/chat/send-stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ conversationId, message, imageBase64 })
-    });
+    // Instead of SSE fetch reader, we make an API call. 
+    // The Socket.io backend listeners (in useSocket.js) will handle 'ai_stream_chunk' and 'ai_response' automatically.
+    const selectedModel = getState().settings?.selectedModel || 'gemini-1.5-flash';
+    const response = await axios.post('/api/chat/send-stream', {
+      conversationId,
+      message,
+      attachments,
+      imageBase64,
+      model: selectedModel
+    }, getAuthConfig(token));
 
-    if (!response.ok) {
-      throw new Error('Failed to start stream');
+    // Ensure we capture the conversationId if this was a new chat
+    if (response.data && response.data.conversationId) {
+      dispatch({ type: 'chat/streamMetadata', payload: { conversationId: response.data.conversationId } });
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let aiText = '';
-    let newConvId = conversationId;
-
-    dispatch({ type: 'chat/startStreaming' });
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataStr = line.slice(6);
-          if (!dataStr) continue;
-          try {
-            const parsed = JSON.parse(dataStr);
-            if (parsed.error) throw new Error(parsed.error);
-            
-            if (parsed.type === 'metadata') {
-              newConvId = parsed.conversationId;
-              dispatch({ type: 'chat/streamMetadata', payload: parsed });
-            }
-            if (parsed.type === 'chunk') {
-              aiText += parsed.text;
-              dispatch({ type: 'chat/streamChunk', payload: parsed.text });
-            }
-            if (parsed.type === 'done') {
-              dispatch({ 
-                type: 'chat/streamDone', 
-                payload: { 
-                  text: aiText, 
-                  conversationId: newConvId,
-                  messageId: parsed.messageId,
-                  userMessageId: parsed.userMessageId,
-                  mood: parsed.mood,
-                  userMessage: message 
-                } 
-              });
-            }
-          } catch (e) {
-            // ignore JSON parse error for partial lines
-          }
-        }
-      }
-    }
   } catch (err) {
+    console.error('Send message stream error:', err);
     dispatch(sendMessage.rejected(err.message));
     dispatch({ type: 'chat/streamError' });
   }
@@ -202,11 +179,6 @@ const chatSlice = createSlice({
   reducers: {
     setCurrentConversation(state, action) {
       state.currentConversation = action.payload;
-      if (action.payload) {
-        localStorage.setItem('activeConversationId', action.payload._id);
-      } else {
-        localStorage.removeItem('activeConversationId');
-      }
     },
     addMessage(state, action) {
       const exists = state.messages.some(m => m._id === action.payload._id);
@@ -224,12 +196,15 @@ const chatSlice = createSlice({
       state.streamingMessage = '';
     },
     streamChunk(state, action) {
-      state.streamingMessage += action.payload;
+      if (typeof action.payload === 'string') {
+        state.streamingMessage = (state.streamingMessage || '') + action.payload;
+      } else if (action.payload && action.payload.chunk) {
+        state.streamingMessage = (state.streamingMessage || '') + action.payload.chunk;
+      }
     },
     streamMetadata(state, action) {
       if (!state.currentConversation) {
         state.currentConversation = { _id: action.payload.conversationId };
-        localStorage.setItem('activeConversationId', action.payload.conversationId);
       }
     },
     streamDone(state, action) {
@@ -237,29 +212,35 @@ const chatSlice = createSlice({
       state.streamingMessage = '';
       state.messages = state.messages.filter(m => !m.isOptimistic);
       
-      const { text, messageId, conversationId, mood, userMessage, userMessageId } = action.payload;
+      // Step 8: Redux Memory Leak Prevention (Limit to last 100 messages)
+      if (state.messages.length > 100) {
+        state.messages = state.messages.slice(state.messages.length - 100);
+      }
       
-      const uMsg = { _id: userMessageId, sender: 'user', content: userMessage, timestamp: new Date().toISOString() };
-      const aMsg = { _id: messageId, sender: 'ai', content: text, mood, timestamp: new Date().toISOString() };
+      const { conversationId, userMessage, aiMessage } = action.payload;
 
-      if (!state.messages.some(m => m._id === uMsg._id)) state.messages.push(uMsg);
-      if (!state.messages.some(m => m._id === aMsg._id)) state.messages.push(aMsg);
+      // Sort messages to ensure correct order
       state.messages.sort((a, b) => new Date(a.timestamp || a.createdAt) - new Date(b.timestamp || b.createdAt));
 
       let conv = state.conversations.find(c => c._id === conversationId);
       if (conv) {
-        conv.lastMessage = text;
-        conv.lastMessageAt = aMsg.timestamp;
+        if (aiMessage) {
+          conv.lastMessage = aiMessage.content;
+          conv.lastMessageAt = aiMessage.timestamp || aiMessage.createdAt;
+        }
       } else {
-        state.conversations.unshift({
-          _id: conversationId,
-          title: userMessage.substring(0, 30) + '...',
-          lastMessage: text,
-          lastMessageAt: aMsg.timestamp,
-          isPinned: false,
-          isArchived: false
-        });
-        state.currentConversation = state.conversations[0];
+        if (userMessage && aiMessage) {
+          let text = userMessage.content;
+          state.conversations.unshift({
+            _id: conversationId,
+            title: typeof text === 'string' ? text.substring(0, 30) + '...' : 'New Chat',
+            lastMessage: aiMessage.content,
+            lastMessageAt: aiMessage.timestamp || aiMessage.createdAt,
+            isPinned: false,
+            isArchived: false
+          });
+          state.currentConversation = state.conversations[0];
+        }
       }
     },
     streamError(state) {
@@ -270,6 +251,29 @@ const chatSlice = createSlice({
         optMsg.isError = true;
         optMsg.isOptimistic = false;
       }
+    },
+    stopGeneration(state) {
+      state.isSending = false;
+      if (state.streamingMessage) {
+        state.streamingMessage += ' [Stopped by User]';
+        // Add current streaming text as a real message
+        if (state.currentConversation) {
+          state.messages.push({
+            _id: `temp-${Date.now()}`,
+            sender: 'ai',
+            content: state.streamingMessage,
+            conversationId: state.currentConversation._id,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
+      state.streamingMessage = '';
+    },
+    setEmergencyMode(state, action) {
+      state.emergencyMode = action.payload;
+    },
+    liveCodeChunk(state, action) {
+      state.liveCodeStream += action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -282,15 +286,6 @@ const chatSlice = createSlice({
       .addCase(fetchConversations.fulfilled, (state, action) => {
         state.isLoading = false;
         state.conversations = action.payload;
-        
-        // Restore active conversation from localStorage
-        const savedId = localStorage.getItem('activeConversationId');
-        if (savedId && !state.currentConversation) {
-          const savedConv = action.payload.find(c => c._id === savedId);
-          if (savedConv) {
-            state.currentConversation = savedConv;
-          }
-        }
       })
       .addCase(fetchConversations.rejected, (state, action) => {
         state.isLoading = false;
@@ -301,7 +296,6 @@ const chatSlice = createSlice({
       .addCase(createConversationAsync.fulfilled, (state, action) => {
         state.conversations.unshift(action.payload);
         state.currentConversation = action.payload;
-        localStorage.setItem('activeConversationId', action.payload._id);
         state.messages = [];
       })
 
@@ -312,9 +306,29 @@ const chatSlice = createSlice({
       })
       .addCase(fetchMessages.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.messages = action.payload;
+        state.messages = action.payload.messages.slice(-100); // Enforce memory cap
+        state.page = action.payload.page;
+        state.hasMore = action.payload.messages.length === 30;
+        state.page = action.payload.page;
+        state.hasMore = action.payload.messages.length === 30;
       })
       .addCase(fetchMessages.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch More Messages
+      .addCase(fetchMoreMessages.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchMoreMessages.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Prepend older messages
+        state.messages = [...action.payload.messages, ...state.messages];
+        state.page = action.payload.page;
+        state.hasMore = action.payload.messages.length === 30;
+      })
+      .addCase(fetchMoreMessages.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
@@ -324,11 +338,13 @@ const chatSlice = createSlice({
         state.isSending = true;
         state.error = null;
         // Optimistic UI: Immediately show the user's message
-        if (action.meta && action.meta.arg && action.meta.arg.message) {
+        if (action.meta && action.meta.arg && (action.meta.arg.message || action.meta.arg.attachments)) {
           state.messages.push({
             _id: 'temp_' + Date.now(),
             sender: 'user',
-            content: action.meta.arg.message,
+            content: action.meta.arg.message || '',
+            imageBase64: action.meta.arg.imageBase64,
+            attachments: action.meta.arg.attachments || [],
             timestamp: new Date().toISOString(),
             isOptimistic: true
           });
@@ -372,7 +388,6 @@ const chatSlice = createSlice({
 
         // Fix for "New Chat": Transition seamlessly to the newly created conversation
         if (!state.currentConversation && action.payload.conversationId) {
-          localStorage.setItem('activeConversationId', action.payload.conversationId);
           state.currentConversation = state.conversations.find(c => c._id === action.payload.conversationId);
         }
       })
@@ -434,5 +449,17 @@ const chatSlice = createSlice({
   }
 });
 
-export const { setCurrentConversation, addMessage, clearChat } = chatSlice.actions;
+export const { 
+  setCurrentConversation, 
+  addMessage, 
+  clearChat,
+  startStreaming,
+  streamChunk,
+  streamMetadata,
+  streamDone,
+  streamError,
+  stopGeneration,
+  setEmergencyMode,
+  liveCodeChunk
+} = chatSlice.actions;
 export default chatSlice.reducer;

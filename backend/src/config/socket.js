@@ -14,12 +14,31 @@ module.exports = {
       }
     });
 
-    // Phase 2: Backend Scalability (WebSockets)
+    // Phase 6: Enterprise Horizontal Scalability
     try {
-      // io.adapter(createAdapter()); // Crashing due to process.send
-      // setupWorker(io);
+      if (process.env.REDIS_URL) {
+        const { createAdapter } = require('@socket.io/redis-adapter');
+        const { createClient } = require('redis');
+        const pubClient = createClient({ url: process.env.REDIS_URL });
+        const subClient = pubClient.duplicate();
+        
+        Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+          io.adapter(createAdapter(pubClient, subClient));
+          console.log('🔗 Redis Pub/Sub Adapter connected successfully for Socket.io Horizontal Scaling.');
+        });
+      } else {
+        console.warn('⚠️ REDIS_URL not provided. Socket.io running in single-node mode.');
+      }
     } catch (e) {
-      console.warn("Socket clustering adapter could not be initialized:", e.message);
+      console.warn("Socket Redis adapter could not be initialized:", e.message);
+    }
+
+    // Initialize Persistent Terminal Service
+    try {
+      const terminalService = require('../services/terminalService');
+      terminalService.initTerminal(io);
+    } catch (err) {
+      console.warn("Terminal Service failed to start (Platform might not support pseudo-terminal):", err.message);
     }
 
     io.on('connection', (socket) => {
@@ -45,6 +64,25 @@ module.exports = {
         socket.join(`user_${roomUserId}`);
         console.log(`Socket ${socket.id} joined room user_${roomUserId}`);
       });
+
+      socket.on('join-room', (conversationId) => {
+        if (conversationId) {
+          socket.join(`chat_${conversationId}`);
+          console.log(`Socket ${socket.id} joined chat room chat_${conversationId}`);
+        }
+      });
+
+      socket.on('leave-room', (conversationId) => {
+        if (conversationId) {
+          socket.leave(`chat_${conversationId}`);
+          console.log(`Socket ${socket.id} left chat room chat_${conversationId}`);
+        }
+      });
+
+
+      // Initialize Phase 5: True Native Audio Bidi WebSocket
+      const liveAudioService = require('../services/liveAudioService');
+      liveAudioService.initializeRealtimeAudio(socket);
 
       socket.on('typing', (data) => {
         // data contains: conversationId, recipientId, typing (boolean)
@@ -169,6 +207,125 @@ CRITICAL RULES FOR VOICE MODE:
         }
       });
 
+      // Closer V3: TRUE NATIVE AUDIO (Speech-to-Speech)
+      socket.on('native_voice_stream', async (data) => {
+        const { audioBase64, userId, conversationId } = data;
+        if (!audioBase64) return;
+
+        try {
+          const aiService = require('../services/aiService');
+          const Conversation = require('../models/Conversation');
+          const Message = require('../models/Message');
+
+          const matches = audioBase64.match(/^data:(audio\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+          if (!matches || matches.length !== 3) {
+            console.error("Invalid audio format");
+            return;
+          }
+
+          let activeConvId = conversationId;
+          let conversation;
+          if (activeConvId) {
+            conversation = await Conversation.findOne({ _id: activeConvId, participants: userId });
+          }
+          if (!conversation) {
+            conversation = await Conversation.create({
+              participants: [userId],
+              title: 'Native Voice Chat',
+              type: 'chat',
+              isGroup: false
+            });
+            activeConvId = conversation._id;
+          }
+
+          // We don't have text for the user's message since we bypassed STT!
+          // We just save a placeholder to keep chat history intact.
+          await Message.create({
+            conversationId: activeConvId,
+            sender: 'user',
+            senderId: userId,
+            content: "🎤 [Native Audio Sent]",
+            timestamp: new Date()
+          });
+
+          const parts = [
+            { text: "You are CloserAI operating in True Native Voice Mode. Listen to this audio carefully. Detect the user's emotion from their voice tone, and respond directly to what they said in a conversational manner. If they speak Telugu, reply in Telugu." },
+            { inlineData: { mimeType: matches[1], data: matches[2] } }
+          ];
+
+          const aiResult = await aiService.generateAIResponse({
+            systemPrompt: "You are an advanced voice assistant. Analyze the audio input directly.",
+            messages: [{ role: 'user', parts }],
+            energyLevel: 'high',
+            domain: 'general'
+          });
+
+          await Message.create({
+            conversationId: activeConvId,
+            sender: 'ai',
+            content: aiResult.text,
+            timestamp: new Date()
+          });
+
+          conversation.lastMessageAt = new Date();
+          await conversation.save();
+
+          // Stream the text back to the frontend for msedge-tts synthesis
+          const words = aiResult.text.split(' ');
+          let chunk = '';
+          for (let i = 0; i < words.length; i++) {
+            chunk += words[i] + ' ';
+            if (i % 5 === 0 || i === words.length - 1) {
+              socket.emit('ai_voice_stream_response', { chunk: chunk.trim() });
+              chunk = '';
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+          }
+          socket.emit('ai_voice_stream_end', { fullText: aiResult.text });
+        } catch (err) {
+          console.error("Native Voice OS error:", err);
+          socket.emit('ai_voice_stream_error', { error: 'Native Voice OS Failed' });
+        }
+      });
+
+      // Closer V2: Continuous Live Video (Vision Latency)
+      socket.on('live_vision_frame', async (data) => {
+        const { imageBase64, prompt } = data;
+        if (!imageBase64) return;
+
+        try {
+          const aiService = require('../services/aiService');
+          const matches = imageBase64.match(/^data:(image\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+          if (!matches || matches.length !== 3) return;
+
+          const parts = [
+            { text: prompt || "You are looking through my camera right now. Keep your observations very brief, like a continuous stream of consciousness. What do you see changing?" },
+            { inlineData: { mimeType: matches[1], data: matches[2] } }
+          ];
+
+          // Call Gemini directly for a fast observation
+          const aiResult = await aiService.generateAIResponse({
+            systemPrompt: "You are CloserAI's real-time vision core. The user is streaming video frames to you. Provide extremely brief (1 sentence) updates on what is happening. Do not use markdown.",
+            messages: [{ role: 'user', parts }],
+            energyLevel: 'high',
+            domain: 'live_news' // bypassing heavy RAG
+          });
+
+          // Stream the observation back to the frontend
+          socket.emit('vision_stream_response', { text: aiResult.text });
+        } catch (err) {
+          console.error("Live Vision frame processing failed:", err.message);
+        }
+      });
+
+      // Closer V2: Voice Conversation Interruption
+      socket.on('interrupt_ai', () => {
+        console.log(`[Socket] Client ${socket.id} interrupted AI generation.`);
+        // In a more complex architecture, we would emit an abort signal to axios/gemini here.
+        // For now, the frontend will halt TTS, and we acknowledge the interrupt.
+        socket.emit('ai_interrupted_ack');
+      });
+
       socket.on('disconnect', () => {
         console.log(`Socket ${socket.id} disconnected`);
       });
@@ -185,6 +342,11 @@ CRITICAL RULES FOR VOICE MODE:
   emitToUser: (userId, event, data) => {
     if (io) {
       io.to(`user_${userId}`).emit(event, data);
+    }
+  },
+  emitToRoom: (roomId, event, data) => {
+    if (io) {
+      io.to(`chat_${roomId}`).emit(event, data);
     }
   }
 };

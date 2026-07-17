@@ -42,7 +42,7 @@ export async function subscribeToPushNotifications() {
     await navigator.serviceWorker.ready;
 
     // Fetch public VAPID key from backend
-    const res = await api.get('/push/public-key');
+    const res = await api.get('/api/push/public-key');
     const publicKey = res.data.publicKey;
     const applicationServerKey = urlBase64ToUint8Array(publicKey);
 
@@ -55,7 +55,7 @@ export async function subscribeToPushNotifications() {
     console.log('[Push OS] Push Subscription created:', subscription);
 
     // Send subscription to backend
-    await api.post('/push/subscribe', subscription);
+    await api.post('/api/push/subscribe', subscription);
     console.log('[Push OS] Subscription sent to backend successfully.');
     
     return true;

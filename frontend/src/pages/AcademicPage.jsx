@@ -35,7 +35,7 @@ export default function AcademicPage() {
   const [expandedViva, setExpandedViva] = useState({});
   const [copied, setCopied] = useState(false);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const execute = async () => {
     setLoading(true);

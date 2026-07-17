@@ -20,7 +20,7 @@ export default function LanguageSelectionPage() {
   const handleNext = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('megha-token');
+      const token = localStorage.getItem('closer-token');
       await axios.post(
         '/api/profile/language',
         { language: selectedLang },

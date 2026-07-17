@@ -43,8 +43,8 @@
   }
 }
 
+/* Default Dark Theme (Midnight) */
 :root {
-  /* Default to dark mode variables */
   --bg-primary: #0D0D1A;
   --bg-secondary: #13132B;
   --bg-tertiary: #1A1A3E;
@@ -61,22 +61,6 @@
   --accent-emerald: #10B981;
   --accent-fuchsia: #D946EF;
   --accent-indigo: #4F46E5;
-  --shadow-card-val: 0 4px 24px rgba(124,58,237,0.18);
-}
-
-[data-theme='dark'] {
-  --bg-primary:    #0D0D1A;
-  --bg-secondary:  #13132B;
-  --bg-tertiary:   #1A1A3E;
-  --bg-overlay:    rgba(13,13,26,0.85);
-  --text-primary:  #EEF0FF;
-  --text-secondary:#A0A8D0;
-  --text-accent:   #A78BFA;
-  --border-default:#2A2A5A;
-  --border-accent: #7C3AED;
-  --accent-violet: #7C3AED;
-  --accent-rose:   #F43F5E;
-  --accent-cyan:   #06B6D4;
   --accent-amber:  #F59E0B;
   --accent-emerald:#10B981;
   --accent-fuchsia:#D946EF;
@@ -104,6 +88,48 @@
   --shadow-card-val: 0 4px 24px rgba(124,58,237,0.10);
 }
 
+/* Cyberpunk Theme */
+[data-theme='cyberpunk'] {
+  --bg-primary: #050511;
+  --bg-secondary: #0A0A1A;
+  --bg-tertiary: #14142D;
+  --bg-overlay: rgba(5,5,17,0.85);
+  --text-primary: #FDF900;
+  --text-secondary: #00FFCC;
+  --text-accent: #FF00FF;
+  --border-default: #330033;
+  --border-accent: #FF00FF;
+  --accent-violet: #FF00FF;
+  --accent-rose: #FF0055;
+  --accent-cyan: #00FFCC;
+  --accent-amber: #FDF900;
+  --accent-emerald: #00FF99;
+  --accent-fuchsia: #FF00FF;
+  --accent-indigo: #3D00E0;
+  --shadow-card-val: 0 8px 32px 0 rgba(255, 0, 255, 0.2);
+}
+
+/* Ocean Theme */
+[data-theme='ocean'] {
+  --bg-primary: #001220;
+  --bg-secondary: #001D33;
+  --bg-tertiary: #002D4D;
+  --bg-overlay: rgba(0,18,32,0.85);
+  --text-primary: #E0F2FE;
+  --text-secondary: #7DD3FC;
+  --text-accent: #38BDF8;
+  --border-default: #0284C7;
+  --border-accent: #0EA5E9;
+  --accent-violet: #6366F1;
+  --accent-rose: #F43F5E;
+  --accent-cyan: #22D3EE;
+  --accent-amber: #FBBF24;
+  --accent-emerald: #10B981;
+  --accent-fuchsia: #D946EF;
+  --accent-indigo: #4F46E5;
+  --shadow-card-val: 0 8px 32px 0 rgba(0, 18, 32, 0.4);
+}
+
 /* Smooth theme transition on toggle */
 * {
   transition: background-color 0.3s ease, color 0.3s ease,
@@ -112,10 +138,45 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding: 0;
+  box-sizing: border-box;
   background-color: var(--bg-primary);
   color: var(--text-primary);
+  
+  /* Native Mobile Feel (Phase 5) */
+  -webkit-touch-callout: none; /* Disable iOS callout menu */
+  -webkit-user-select: none;   /* Disable text selection */
+  user-select: none;
+  overscroll-behavior-y: none; /* Disable pull-to-refresh / rubber banding */
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  /* Native Mobile App Safe Area Paddings */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+input, textarea, p, h1, h2, h3, h4, span, code, pre {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Global Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-violet);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -248,7 +309,7 @@ body {
 
 
 /* ==========================================================================
-   MEGHA AI - ENGINE ANIMATIONS & STYLES (PART E)
+   CloserAI - ENGINE ANIMATIONS & STYLES (PART E)
    ========================================================================== */
 
 /* SPLASH SCREEN — App first open, 2-3 seconds */
@@ -404,20 +465,25 @@ body {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Global ultra-thin scrollbars (macOS style) */
+/* Global scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 6px; /* Thinner horizontal scrollbar */
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(160, 168, 208, 0.2);
-  border-radius: 10px;
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(160, 168, 208, 0.5);
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Specific thick scrollbar for chat area (if they have this class) */
+.chat-scroll-area::-webkit-scrollbar {
+  width: 10px;
 }
 
 @keyframes aurora {
@@ -505,3 +571,37 @@ body {
 .text-stream-glow {
   animation: text-glow-reveal 1s ease-out forwards;
 }
+
+/* ==========================================================================
+   MOBILE OPTIMIZATIONS (Closer-AI v2.0)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Hide custom scrollbar on mobile, let touch handle it naturally */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  
+  /* Ensure modal popups take full screen space on mobile */
+  .mac-window {
+    margin: 0.5rem 0;
+    border-radius: 4px;
+  }
+  
+  /* Make message bubbles utilize more width */
+  .glass-bubble-ai, .glass-bubble-user {
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Reduce padding in Chat Area */
+  #chat-export-container {
+    padding: 8px !important;
+  }
+
+  /* Downsize Splash Text */
+  .splash-text {
+    font-size: 2rem !important;
+  }
+}
+

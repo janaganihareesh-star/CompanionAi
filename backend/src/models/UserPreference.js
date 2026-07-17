@@ -26,6 +26,10 @@ const UserPreferenceSchema = new mongoose.Schema({
     type: String,
     default: 'en-US-Standard-C'
   },
+  elevenLabsVoiceId: {
+    type: String,
+    default: ''
+  },
   interactionMode: {
     type: String,
     enum: ['chat', 'voice', 'both'],
@@ -58,6 +62,10 @@ const UserPreferenceSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  morningReportEnabled: {
+    type: Boolean,
+    default: false
+  },
   onboardingComplete: {
     type: Boolean,
     default: false
@@ -84,8 +92,7 @@ const UserPreferenceSchema = new mongoose.Schema({
   },
   themeMode: {
     type: String,
-    enum: ['dark', 'light'],
-    default: 'dark'
+    default: 'dark' // e.g. dark, light, cyberpunk, ocean, forest, sunset
   },
   educationLevel: {
     type: String,
@@ -108,6 +115,10 @@ const UserPreferenceSchema = new mongoose.Schema({
     default: []
   },
   offlineMode: {
+    type: Boolean,
+    default: false
+  },
+  appStoreSafeMode: {
     type: Boolean,
     default: false
   }

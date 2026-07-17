@@ -1,18 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Code2, Play, ThumbsUp, ThumbsDown, MessageSquareDiff, ShieldCheck, PhoneCall, Copy, Edit3, RefreshCw, MoreHorizontal, BookOpen, GitBranch, Volume2, Share2, Lightbulb, Globe, ArrowUp } from 'lucide-react';
+import { Code2, Play, ThumbsUp, ThumbsDown, MessageSquareDiff, ShieldCheck, ShieldAlert, PhoneCall, Copy, Edit3, RefreshCw, MoreHorizontal, BookOpen, GitBranch, Volume2, Share2, Lightbulb, Globe, ArrowUp, Download, Eye } from 'lucide-react';
 import { useDispatch } from 'react-redux';
-import { editAndResendMessage, branchConversation, sendMessage } from '../store/chatSlice';
+import { editAndResendMessage, branchConversation, sendMessage, sendMessageStreamAsync } from '../store/chatSlice';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import ShareModal from './ShareModal';
+import VoicePlayer from './VoicePlayer';
+import ChatImage from './ChatImage';
+import FileCard from './FileCard';
+import DataChart from './DataChart';
 import ReactMarkdown from 'react-markdown';
+import { marked } from 'marked';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { MOCK_PLUGINS } from '../pages/PluginStorePage';
 
 const MOOD_EMOJIS = {
   sad: '😢',
@@ -27,7 +33,7 @@ const MOOD_EMOJIS = {
   neutral: '😐'
 };
 
-export default function MessageBubble({ message, onArtifactOpen, onOpenSources }) {
+const MessageBubble = React.memo(function MessageBubble({ message, isGroup, onArtifactOpen, onCanvasArtifactOpen, onOpenCanvas, onOpenSources, onCodeRun }) {
   const isUser = message.sender === 'user';
   
   // Format timestamp helper
@@ -55,6 +61,13 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
   const [changeInstruction, setChangeInstruction] = useState('');
   const moreActionsRef = useRef(null);
   const changeResponseRef = useRef(null);
+
+  const handleAutoRefine = (instruction, filename) => {
+    dispatch(sendMessageStreamAsync({
+      message: `Edit the document "${filename}": ${instruction}. Do not explain, just give me the updated file.`,
+      conversationId: message.conversationId
+    }));
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -163,12 +176,30 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
       console.error('Failed to save feedback text');
     }
   };
+
+  const [verificationResult, setVerificationResult] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleVerify = async () => {
+    if (!message.content) return;
+    setIsVerifying(true);
+    try {
+      const res = await api.post('/chat/verify', { fact: message.content });
+      setVerificationResult(res.data);
+    } catch (err) {
+      toast.error('Verification failed');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   // Vibration effect removed due to browser intervention errors
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      layout
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
       className={`flex w-full ${isUser ? 'mb-8 justify-end' : 'mb-12 justify-start'}`}
     >
       <div
@@ -178,6 +209,11 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
             : 'glass-bubble-ai text-text rounded-tl-sm mr-auto hover:shadow-card transition-shadow duration-300'
         }`}
       >
+        {isGroup && isUser && message.userId?.fullName && (
+          <div className="text-[10px] font-bold text-emerald-400 mb-1 tracking-wide">
+            {message.userId.fullName}
+          </div>
+        )}
         {isEditing ? (
           <div className="flex flex-col gap-2 min-w-[200px]">
             <textarea
@@ -203,7 +239,109 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
           </div>
         ) : (
           <div className="whitespace-pre-wrap word-break">
-            {renderContent(message.content, isUser, onArtifactOpen)}
+            {message.imageBase64 && (
+              <div className="mb-3 rounded-xl overflow-hidden shadow-sm">
+                <ChatImage src={message.imageBase64} alt="Uploaded attachment" conversationId={message.conversationId} />
+              </div>
+            )}
+            {message.attachments && message.attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {message.attachments.map((att, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onCanvasArtifactOpen ? onCanvasArtifactOpen(att.data, 'txt') : null}
+                    title="View Document"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-accent" />
+                    <span className="truncate max-w-[150px]">{att.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {message.audioUrl && (
+              <div className="mb-3">
+                <VoicePlayer audioUrl={message.audioUrl} />
+              </div>
+            )}
+            
+            {/* Smart Plugin Interceptors */}
+            {(() => {
+              const content = message.content || '';
+              const installMatch = content.match(/\[INSTALL_PLUGIN:\s*([^\]]+)\]/);
+              const suggestMatch = content.match(/\[SUGGEST_PLUGIN:\s*([^\]]+)\]/);
+              const cleanContent = content.replace(/\[INSTALL_PLUGIN:\s*[^\]]+\]/g, '').replace(/\[SUGGEST_PLUGIN:\s*[^\]]+\]/g, '');
+              
+              const pluginId = installMatch ? installMatch[1].trim() : (suggestMatch ? suggestMatch[1].trim() : null);
+              const plugin = pluginId ? MOCK_PLUGINS.find(p => p.id === pluginId) : null;
+
+              return (
+                <>
+                  <div className={`prose prose-sm md:prose-base max-w-none break-words leading-relaxed ${isUser ? 'text-text/95' : 'text-text/95'} prose-headings:text-inherit prose-a:text-accent hover:prose-a:text-accent-light prose-strong:text-inherit prose-code:text-accent-light prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0`}>
+                    {renderContent(cleanContent, isUser, onArtifactOpen, onCanvasArtifactOpen, onCodeRun, message.conversationId, handleAutoRefine)}
+                  </div>
+                  
+                  {plugin && (
+                    <div className="mt-4 p-4 rounded-xl border border-white/10 bg-[#1E1E1E] flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+                          style={{ backgroundColor: plugin.iconBg, color: plugin.iconColor }}
+                        >
+                          {plugin.iconText}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-sm">{plugin.name}</h4>
+                          <p className="text-gray-400 text-xs mt-0.5">{installMatch ? 'Plugin installed successfully' : 'Recommended for this task'}</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                          toast.success(`${plugin.name} ${installMatch ? 'is ready to use' : 'connected successfully'}!`);
+                          if (suggestMatch) {
+                            try {
+                              await api.post('/api/plugins/toggle', { pluginName: plugin.id, isEnabled: true });
+                            } catch(e) {}
+                          }
+                        }}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                          installMatch 
+                            ? 'bg-green-500/20 text-green-400 cursor-default'
+                            : 'bg-white text-black hover:bg-gray-200'
+                        }`}
+                      >
+                        {installMatch ? 'Installed' : 'Connect Plugin'}
+                      </button>
+                    </div>
+                  )}
+
+                  {verificationResult && (
+                    <div className={`mt-3 p-3 rounded-xl border text-sm ${
+                      verificationResult.status === 'Verified' ? 'bg-emerald-500/10 border-emerald-500/30' :
+                      verificationResult.status === 'False' ? 'bg-rose-500/10 border-rose-500/30' :
+                      'bg-amber-500/10 border-amber-500/30'
+                    }`}>
+                      <div className="flex items-center gap-2 font-bold mb-1">
+                        {verificationResult.status === 'Verified' ? <ShieldCheck className="w-4 h-4 text-emerald-500" /> : <ShieldAlert className="w-4 h-4 text-rose-500" />}
+                        <span className={verificationResult.status === 'Verified' ? 'text-emerald-500' : 'text-rose-500'}>
+                          Fact Check: {verificationResult.status}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 text-xs mb-2">{verificationResult.explanation}</p>
+                      {verificationResult.sources && verificationResult.sources.length > 0 && (
+                        <div className="text-[10px] text-gray-500">
+                          Sources:
+                          {verificationResult.sources.map((s, i) => (
+                            <a key={i} href={s} target="_blank" rel="noopener noreferrer" className="ml-1 text-accent hover:underline">{new URL(s).hostname.replace('www.', '')}</a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+            
           </div>
         )}
         
@@ -232,6 +370,28 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
           </div>
         )}
 
+        {/* Phase 1: Inline Citations */}
+        {!isUser && message.sources && message.sources.length > 0 && message.sources[0] !== 'Closer Logic Engine' && message.sources[0] !== 'Crisis Care Check-in' && (
+          <div className="mt-3 pt-3 border-t border-border/30">
+            <div className="text-[10px] font-bold text-muted uppercase tracking-wider mb-2 flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              Sources
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {message.sources.map((source, idx) => {
+                let domain = '';
+                try { domain = new URL(source).hostname.replace('www.', ''); } catch(e) { domain = source; }
+                return (
+                  <a key={idx} href={source} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border/40 hover:border-accent hover:bg-accent/10 rounded-full transition-all group/link text-xs max-w-[200px]">
+                    <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="favicon" className="w-3 h-3 rounded-full opacity-70 group-hover/link:opacity-100" onError={(e) => e.target.style.display='none'} />
+                    <span className="text-muted group-hover/link:text-text truncate">{domain}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons for AI Message */}
         {!isUser && (
           <div className="absolute -bottom-8 left-1 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-bg/80 backdrop-blur-sm rounded-md px-2 py-1 border border-border/40 z-10">
@@ -246,6 +406,9 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
             </button>
             <button onClick={() => setShowShareModal(true)} className="p-1 text-muted hover:text-text transition-colors cursor-pointer" title="Share">
               <Share2 className="w-4 h-4 pointer-events-none" />
+            </button>
+            <button onClick={handleVerify} disabled={isVerifying} className={`p-1 transition-colors cursor-pointer ${isVerifying ? 'animate-spin text-accent' : 'text-muted hover:text-emerald-400'}`} title="Verify Fact (Hallucination Checker)">
+              <ShieldCheck className="w-4 h-4 pointer-events-none" />
             </button>
             <div className="relative" ref={changeResponseRef}>
               <button onClick={() => setShowChangeResponse(!showChangeResponse)} className="p-1 text-muted hover:text-text transition-colors cursor-pointer" title="Ask to change response">
@@ -308,6 +471,17 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
                       <BookOpen className="w-4 h-4 text-muted" />
                       View sources
                     </button>
+                    {onOpenCanvas && !isUser && message.content && (
+                      <button onClick={() => { 
+                        setShowMoreActions(false); 
+                        const cleanContent = (message.content || '').replace(/\[INSTALL_PLUGIN:\s*[^\]]+\]/g, '').replace(/\[SUGGEST_PLUGIN:\s*[^\]]+\]/g, '');
+                        const htmlContent = marked.parse(cleanContent);
+                        onOpenCanvas(htmlContent); 
+                      }} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface flex items-center gap-2">
+                        <Edit3 className="w-4 h-4 text-muted" />
+                        Edit & Export Document
+                      </button>
+                    )}
                     <button onClick={handleBranchChat} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-surface flex items-center gap-2">
                       <GitBranch className="w-4 h-4 text-muted" />
                       Branch in new chat
@@ -350,26 +524,197 @@ export default function MessageBubble({ message, onArtifactOpen, onOpenSources }
         isOpen={showShareModal} 
         onClose={() => setShowShareModal(false)} 
         message={message}
-        conversationTitle="MEGHA AI Conversation"
+        conversationTitle="CloserAI Conversation"
       />
     </motion.div>
   );
-}
-
+});
 // ReactMarkdown code block parser
-function renderContent(text, isUser, onArtifactOpen) {
+function renderContent(text, isUser, onArtifactOpen, onCanvasArtifactOpen, onCodeRun, conversationId, onAutoRefine) {
   if (isUser || !text) return text;
   
+  // Intercept PDF_CONTENT
+  const pdfMatch = text.match(/<PDF_CONTENT>([\s\S]*?)<\/PDF_CONTENT>/);
+  let pdfContent = null;
+  let remainingText = text;
+  if (pdfMatch) {
+    pdfContent = pdfMatch[1].trim();
+    remainingText = text.replace(pdfMatch[0], '').trim();
+  }
+
+  // Intercept CHART block
+  const chartMatch = remainingText.match(/<CHART>([\s\S]*?)<\/CHART>/);
+  let chartConfig = null;
+  if (chartMatch) {
+    try {
+      chartConfig = JSON.parse(chartMatch[1].trim());
+      remainingText = remainingText.replace(chartMatch[0], '').trim();
+    } catch (e) {
+      console.error('Failed to parse CHART JSON', e);
+    }
+  }
+
+  // Intercept VIDEO block
+  const videoMatch = remainingText.match(/<VIDEO>([\s\S]*?)<\/VIDEO>/);
+  let videoData = null;
+  if (videoMatch) {
+    try {
+      videoData = JSON.parse(videoMatch[1].trim());
+      remainingText = remainingText.replace(videoMatch[0], '').trim();
+    } catch (e) {
+      console.error('Failed to parse VIDEO JSON', e);
+    }
+  }
+
+  // Intercept IMAGE block
+  const imageMatch = remainingText.match(/<IMAGE>([\s\S]*?)<\/IMAGE>/);
+  let imageUrl = null;
+  if (imageMatch) {
+    imageUrl = imageMatch[1].trim();
+    remainingText = remainingText.replace(imageMatch[0], '').trim();
+  }
+
+  // Intercept AUDIO block
+  const audioMatch = remainingText.match(/<AUDIO>([\s\S]*?)<\/AUDIO>/);
+  let audioData = null;
+  if (audioMatch) {
+    try {
+      audioData = JSON.parse(audioMatch[1].trim());
+      remainingText = remainingText.replace(audioMatch[0], '').trim();
+    } catch (e) {
+      console.error('Failed to parse AUDIO JSON', e);
+    }
+  }
+
+  // Intercept 3D block
+  const threeDMatch = remainingText.match(/<3D>([\s\S]*?)<\/3D>/);
+  let threeDData = null;
+  if (threeDMatch) {
+    try {
+      threeDData = JSON.parse(threeDMatch[1].trim());
+      remainingText = remainingText.replace(threeDMatch[0], '').trim();
+    } catch (e) {
+      console.error('Failed to parse 3D JSON', e);
+    }
+  }
+
+  
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
+    <>
+      {pdfContent && (
+        <div className="mb-4 bg-white text-black p-0 rounded-xl overflow-hidden shadow-2xl border border-gray-200">
+          <div className="bg-gray-100 p-3 border-b border-gray-200 flex justify-between items-center">
+            <div className="flex items-center gap-2 text-gray-700 font-bold">
+              <BookOpen className="w-5 h-5 text-rose-600" />
+              <span>Generated Document (PDF)</span>
+            </div>
+            <button 
+              onClick={() => {
+                const element = document.getElementById(`pdf-render-${conversationId}`);
+                if (window.html2pdf && element) {
+                  window.html2pdf().set({
+                    margin: 10,
+                    filename: 'Closer_AI_Document.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                  }).from(element).save();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-md transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download PDF
+            </button>
+          </div>
+          <div id={`pdf-render-${conversationId}`} className="p-8 bg-white max-h-[500px] overflow-y-auto print:max-h-none print:overflow-visible prose prose-sm max-w-none text-black">
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+              {pdfContent}
+            </ReactMarkdown>
+          </div>
+        </div>
+      )}
+      {chartConfig && <DataChart config={chartConfig} />}
+      {videoData && (
+        <div className="mb-4 bg-black rounded-xl overflow-hidden border border-border/30 relative shadow-lg">
+          {videoData.status === 'processing' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10 backdrop-blur-sm">
+              <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin mb-2"></div>
+              <p className="text-xs font-bold text-accent">Generating Video...</p>
+              <p className="text-[10px] text-muted max-w-xs text-center mt-1">"{videoData.prompt}"</p>
+            </div>
+          )}
+          <video 
+            src={videoData.url} 
+            controls 
+            autoPlay={videoData.status !== 'processing'} 
+            loop 
+            className="w-full max-h-[300px] object-cover"
+          />
+          <div className="p-2 bg-surface/80 border-t border-border/30 text-xs text-muted truncate">
+            Prompt: {videoData.prompt}
+          </div>
+        </div>
+      )}
+      {imageUrl && (
+        <div className="mb-4 bg-surface rounded-xl overflow-hidden border border-border/50 shadow-lg">
+          <img src={imageUrl} alt="Generated AI Graphic" className="w-full object-cover" />
+        </div>
+      )}
+      {audioData && (
+        <div className="mb-4 p-4 bg-surface rounded-xl border border-border/50 shadow-lg flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-accent text-sm font-bold">
+            <span className="material-icons text-base">music_note</span> AI Audio Track
+          </div>
+          <audio src={audioData.url} controls className="w-full" />
+          <div className="text-xs text-muted truncate">Prompt: {audioData.prompt}</div>
+        </div>
+      )}
+      {threeDData && (
+        <div className="mb-4 bg-surface rounded-xl overflow-hidden border border-border/50 shadow-lg flex flex-col items-center justify-center p-4">
+          <div className="w-full h-48 bg-gray-900 rounded-lg flex items-center justify-center mb-2">
+            <span className="text-gray-400 font-bold tracking-widest">[Interactive 3D Viewer Placeholder]</span>
+          </div>
+          <div className="text-xs text-accent truncate border border-accent/30 bg-accent/10 px-2 py-1 rounded w-full text-center">
+            🔗 <a href={threeDData.url} target="_blank" rel="noreferrer" className="hover:underline">Download {threeDData.prompt} Asset (.glb)</a>
+          </div>
+        </div>
+      )}
+      {remainingText && (
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
       components={{
         code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
+          const match = /language-(\w+(?:[:\w\.]+)?)/.exec(className || '');
           const lang = match ? match[1].toLowerCase() : '';
-          const isRenderable = ['html', 'javascript', 'js', 'react', 'jsx', 'python', 'py', 'java', 'c', 'cpp', 'go', 'ruby', 'rust'].includes(lang);
           const codeString = String(children).replace(/\n$/, '');
+
+          let isFile = false;
+          let filename = 'document.txt';
+
+          if (!inline) {
+            const cleanLang = lang.trim();
+            if (cleanLang.startsWith('file:')) {
+              isFile = true;
+              let parsedName = cleanLang.split(':')[1] || 'document';
+              
+              // Remove any existing extension like .md to force proper pdf/docx generation
+              if (parsedName.includes('.')) {
+                parsedName = parsedName.split('.')[0];
+              }
+              filename = parsedName + '.pdf'; // Default to PDF for these formatted blocks
+            } else if (['pdf', 'docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls', 'csv', 'zip'].includes(cleanLang)) {
+              isFile = true;
+              filename = `document.${cleanLang}`;
+            }
+          }
+
+          if (isFile) {
+            return <FileCard filename={filename} content={codeString} onAutoRefine={onAutoRefine} />;
+          }
+
+          const isRenderable = ['html', 'javascript', 'js', 'react', 'jsx', 'python', 'py', 'java', 'c', 'cpp', 'go', 'ruby', 'rust'].includes(lang);
 
           if (!inline && match) {
             return (
@@ -385,15 +730,45 @@ function renderContent(text, isUser, onArtifactOpen) {
                     <span className="uppercase tracking-wider">{lang}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {onArtifactOpen && (
+                    {(['html', 'jsx', 'react', 'javascript', 'js'].includes(lang)) ? (
                       <button 
-                        onClick={() => onArtifactOpen(codeString, lang)}
+                        onClick={() => onCanvasArtifactOpen ? onCanvasArtifactOpen(codeString, lang) : null}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/20 text-accent hover:bg-accent hover:text-white rounded-md transition font-semibold cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Preview Artifact</span>
+                      </button>
+                    ) : (onCodeRun || onArtifactOpen) && (
+                      <button 
+                        onClick={() => onCodeRun ? onCodeRun(codeString, lang) : onArtifactOpen(codeString, lang)}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/20 text-accent hover:bg-accent hover:text-white rounded-md transition font-semibold cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5" />
                         <span>Run Code</span>
                       </button>
                     )}
+                    <button 
+                      onClick={() => {
+                        const blob = new Blob([codeString], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        let ext = lang ? (lang === 'react' ? 'jsx' : lang === 'python' ? 'py' : lang === 'javascript' ? 'js' : lang === 'html' ? 'html' : lang === 'css' ? 'css' : lang === 'json' ? 'json' : lang === 'markdown' ? 'md' : lang) : 'txt';
+                        if (ext.length > 5 || ext.includes(' ') || ext.includes('_')) {
+                          ext = 'txt';
+                        }
+                        a.download = `closer-ai-artifact-${Date.now()}.${ext}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 2000);
+                        toast.success('File downloaded successfully!', { icon: '⬇️', style: { borderRadius: '10px', background: '#333', color: '#fff' } });
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                      title="Download file"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
                     <button 
                       onClick={() => {
                         navigator.clipboard.writeText(codeString);
@@ -430,7 +805,10 @@ function renderContent(text, isUser, onArtifactOpen) {
             </code>
           );
         },
-        p({ children }) {
+        p({ node, children }) {
+          if (node && node.children && node.children.some(n => n.tagName === 'img')) {
+            return <>{children}</>;
+          }
           return <p className="mb-1.5 last:mb-0 leading-relaxed text-[15px]">{children}</p>;
         },
         h1({ children }) { return <h1 className="text-2xl font-bold mt-6 mb-4 font-outfit text-white">{children}</h1>; },
@@ -454,11 +832,27 @@ function renderContent(text, isUser, onArtifactOpen) {
           );
         },
         th({ children }) { return <th className="bg-surface/50 border-b border-border/50 p-3 font-semibold">{children}</th>; },
-        td({ children }) { return <td className="border-b border-border/30 p-3">{children}</td>; }
+        td({ children }) { return <td className="border-b border-border/30 p-3">{children}</td>; },
+        img({ src, alt }) {
+          return (
+            <ChatImage src={src} alt={alt} conversationId={conversationId} />
+          );
+        }
       }}
     >
-      {text}
+      {(() => {
+        // Task 7.1: Streaming UI Glitches (Markdown Buffering)
+        // If there's an odd number of ``` (unclosed code block), append ``` to fix layout during streaming
+        const backtickMatches = remainingText.match(/```/g);
+        if (backtickMatches && backtickMatches.length % 2 !== 0) {
+          return remainingText + '\n```';
+        }
+        return remainingText;
+      })()}
     </ReactMarkdown>
+      )}
+    </>
   );
 }
-// force vite update
+
+export default MessageBubble;

@@ -27,7 +27,7 @@ export default function RelationshipSelectionPage() {
   const handleNext = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('megha-token');
+      const token = localStorage.getItem('closer-token');
       const selectedOption = RELATIONSHIPS.find(r => r.value === selectedRel);
       await axios.post(
         '/api/profile/relationship',
@@ -69,7 +69,7 @@ export default function RelationshipSelectionPage() {
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-3xl mx-auto bg-surface/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_0_40px_rgba(167,139,250,0.15)] px-6 py-8 md:px-10 md:py-12 my-auto relative z-10 flex flex-col justify-center transform transition-all hover:shadow-[0_0_50px_rgba(167,139,250,0.25)]">
+      <div className="w-full max-w-2xl mx-auto bg-surface/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_0_40px_rgba(167,139,250,0.15)] px-6 py-6 md:px-8 md:py-8 my-auto relative z-10 flex flex-col justify-center transform transition-all hover:shadow-[0_0_50px_rgba(167,139,250,0.25)]">
 
         <motion.div
           initial={{ opacity: 0, x: 60 }}
@@ -82,7 +82,7 @@ export default function RelationshipSelectionPage() {
               <span>Step 3 • Vibe & Persona</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black font-outfit text-transparent bg-clip-text bg-gradient-to-r from-text via-text to-muted tracking-tight">Companion Vibe & Persona</h2>
-            <p className="text-muted text-sm md:text-base max-w-lg mx-auto font-medium">Choose how MEGHA AI should emotionally connect with you.</p>
+            <p className="text-muted text-sm md:text-base max-w-lg mx-auto font-medium">Choose how CloserAI should emotionally connect with you.</p>
           </div>
 
           {/* Cards Grid */}

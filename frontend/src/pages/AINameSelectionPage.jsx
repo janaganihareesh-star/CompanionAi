@@ -16,7 +16,7 @@ export default function AINameSelectionPage() {
   const [successExit, setSuccessExit] = useState(false);
 
   // Get the selected gender from the previous step
-  const aiGender = localStorage.getItem('megha-ai-gender') || 'female';
+  const aiGender = localStorage.getItem('closer-ai-gender') || 'female';
   const avatarSrc = aiGender === 'female' ? femaleFace : maleFace;
 
   const targetText = 'Will you name me?';
@@ -46,14 +46,14 @@ export default function AINameSelectionPage() {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('megha-token');
+      const token = localStorage.getItem('closer-token');
       await axios.post(
         '/api/profile/ai-name',
         { aiName: aiName.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      localStorage.setItem('megha-ai-name', aiName.trim());
+      localStorage.setItem('closer-ai-name', aiName.trim());
 
       setSuccessExit(true);
 

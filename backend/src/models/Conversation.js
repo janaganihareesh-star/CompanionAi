@@ -39,9 +39,42 @@ const ConversationSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  folder: {
+    type: String,
+    default: 'General'
+  },
+  tags: {
+    type: [String],
+    default: []
+  },
+  isPublic: {
+    type: Boolean,
+    default: false
+  },
+  shareId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  isGroup: {
+    type: Boolean,
+    default: false
+  },
+  members: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   isDeleted: {
     type: Boolean,
     default: false
+  },
+  rollingSummary: {
+    type: String,
+    default: ''
+  },
+  summaryLastMessageId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message'
   }
 }, {
   timestamps: true

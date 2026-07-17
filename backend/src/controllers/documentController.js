@@ -136,6 +136,39 @@ exports.uploadDocument = async (req, res, next) => {
     const preview = extractedText.substring(0, 300);
     const wordCount = extractedText.trim().split(/\s+/).length;
 
+    // V2 Scale & Context Windows (Infinite Memory RAG)
+    if (wordCount > 1000) {
+      console.log(`[Document Intelligence] Large document detected (${wordCount} words). Chunking into Vector Search RAG...`);
+      const embeddingService = require('../services/embeddingService');
+      const MemoryVault = require('../models/MemoryVault');
+      
+      const chunks = embeddingService.chunkText(extractedText, 500); // 500 words per chunk
+      
+      // Hierarchical Retrieval (Claude-Level Context) - Add a root metadata chunk
+      const rootEmbedding = await embeddingService.generateEmbedding(`Document: ${req.file.originalname}`);
+      if (rootEmbedding) {
+         await MemoryVault.create({
+            userId: req.user.id,
+            memory: `[Document Metadata: ${req.file.originalname}] Uploaded document with ${wordCount} words. To answer questions about this, rely on the detailed chunks.`,
+            type: 'fact',
+            embedding: rootEmbedding
+         });
+      }
+
+      for (const chunk of chunks) {
+        const embedding = await embeddingService.generateEmbedding(chunk);
+        if (embedding) {
+          await MemoryVault.create({
+            userId: req.user.id,
+            memory: `[Document: ${req.file.originalname}] ${chunk}`,
+            type: 'fact',
+            embedding
+          });
+        }
+      }
+      console.log(`[Document Intelligence] Inserted ${chunks.length} vectorized chunks into MemoryVault.`);
+    }
+
     res.status(200).json({
       success: true,
       fileId: path.basename(req.file.path),

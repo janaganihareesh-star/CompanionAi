@@ -1,0 +1,52 @@
+name: Build iOS Native App (CLOSER-AI)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install Frontend Dependencies
+      working-directory: ./frontend
+      run: npm install
+
+    - name: Build Web Assets
+      working-directory: ./frontend
+      run: npm run build
+
+    - name: Install Capacitor iOS
+      working-directory: ./frontend
+      run: |
+        npm install @capacitor/ios
+        npx cap add ios || npx cap sync ios
+
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
+    - name: Build iOS App
+      working-directory: ./frontend/ios/App
+      run: |
+        xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator -derivedDataPath build
+      
+    - name: Upload iOS Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: CLOSER-AI-iOS-Build
+        path: frontend/ios/App/build/Build/Products/Release-iphonesimulator/App.app

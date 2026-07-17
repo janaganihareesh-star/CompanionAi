@@ -1,0 +1,880 @@
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
+const UserPreference = require('../models/UserPreference');
+const RelationshipStats = require('../models/RelationshipStats');
+const aiService = require('../services/aiService');
+const promptBuilder = require('../services/promptBuilder');
+const memoryService = require('../services/memoryService');
+const emotionService = require('../services/emotionService');
+const safetyService = require('../services/safetyService');
+const milestoneService = require('../services/milestoneService');
+const summaryService = require('../services/summaryService');
+const queueService = require('../services/queueService');
+const ragService = require('../services/ragService');
+const memoryCompressor = require('../services/memoryCompressor');
+const socketConfig = require('../config/socket');
+
+exports.createConversation = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { title = 'New Chat' } = req.body;
+
+    const conversation = await Conversation.create({
+      userId,
+      title: title.substring(0, 30),
+      type: 'chat'
+    });
+
+    res.status(201).json({ success: true, conversation });
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// POST /api/chat/send
+exports.sendMessage = async (req, res, next) => {
+  try {
+    const { message, imageBase64, images } = req.body;
+    let { conversationId } = req.body;
+    const userId = req.user.id;
+
+    if (!message) {
+      return res.status(400).json({ success: false, message: 'Message content is required.' });
+    }
+
+    // 1. Create or use conversation
+    let conversation;
+    if (conversationId) {
+      conversation = await Conversation.findOne({ _id: conversationId, userId });
+    }
+    
+    if (!conversation) {
+      conversation = await Conversation.create({
+        userId,
+        title: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
+        type: 'chat'
+      });
+      conversationId = conversation._id;
+    }
+
+    // 2. Save user message to Message collection
+    const userMsgObj = await Message.create({
+      conversationId,
+      userId,
+      sender: 'user',
+      content: message,
+      mood: 'neutral'
+    });
+
+    // 3. Load user preferences for safety context
+    const userPref = await UserPreference.findOne({ userId });
+    const aiName = userPref?.aiName || 'Maya';
+    const userName = req.user?.fullName || 'Friend';
+
+    const ragService = require('../services/ragService');
+    
+    // 4. Parallel Execution (Phase 6.1 Latency Optimization)
+    // Run safety check, emotion detection, prompt building, and RAG concurrently
+    const [safetyOverride, emotionResult, promptData, longTermMemories] = await Promise.all([
+      safetyService.checkSafetyTriggers(message, { userName, aiName }),
+      emotionService.detectEmotion({ userId, text: message }),
+      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId }),
+      ragService.searchGlobalMessageHistory(userId, message, conversationId, 1)
+    ]);
+
+    let aiResponseText = '';
+    let finalMood = 'neutral';
+    let finalEnergyLevel = 'medium';
+    let finalDomain = null;
+    let finalConfidenceScore = 100;
+    let finalSources = [];
+    let finalDomains = [];
+    let finalEmergency = false;
+
+    if (safetyOverride) {
+      // Direct safety response — override everything
+      aiResponseText = safetyOverride.reply;
+      finalMood = safetyOverride.action === 'crisis_override' ? 'sad' : finalMood;
+      
+      // Tracking persistent crisis behavior
+      if (safetyOverride.action === 'crisis_override') {
+        conversation.crisisCount = (conversation.crisisCount || 0) + 1;
+        if (conversation.crisisCount >= 3) {
+          const { sendEmergencyAlertEmail } = require('../utils/emailService');
+          
+          if (userPref?.trustedContact1?.email) {
+            sendEmergencyAlertEmail(userPref.trustedContact1.email, userPref.trustedContact1.name, userName).catch(e => console.error(e));
+          }
+          if (userPref?.trustedContact2?.email) {
+            sendEmergencyAlertEmail(userPref.trustedContact2.email, userPref.trustedContact2.name, userName).catch(e => console.error(e));
+          }
+          
+          conversation.crisisCount = 0; // Reset after sending to avoid spamming on every subsequent message
+        }
+      }
+    } else {
+      // Reset crisis count if the user says something normal
+      if (conversation.crisisCount > 0) {
+        conversation.crisisCount = 0;
+      }
+      
+      // 5. Apply Parallel Results
+      finalMood = emotionResult.mood;
+      finalEnergyLevel = emotionResult.energyLevel || 'medium';
+
+      // Update user message mood (background)
+      userMsgObj.mood = finalMood;
+      userMsgObj.save().catch(e => console.error("Error saving mood", e));
+
+      finalDomain = promptData.domain;
+      finalDomains = promptData.domains || [];
+
+      // 4.5 Fetch Chat History to Fix Amnesia
+      const historyLimit = 6; // Keep context window safe
+      const conversationHistory = await Message.find({ 
+        conversationId,
+        _id: { $ne: userMsgObj._id }
+      })
+        .sort({ timestamp: -1 })
+        .limit(historyLimit);
+
+      // Sort chronological (oldest first)
+      const chronologicalHistory = conversationHistory.reverse();
+
+      const historicalMessages = chronologicalHistory.map(msg => {
+        // Hard truncation safety: Prevent payload overflow attack
+        const safeContent = msg.content.length > 2000 
+          ? msg.content.substring(0, 2000) + '...[TRUNCATED]' 
+          : msg.content;
+          
+        return {
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: safeContent }]
+        };
+      });
+
+      // 4.6 LONG TERM MEMORY RECALL (RAG Engine)
+      if (longTermMemories && longTermMemories.length > 0) {
+        const ragContextText = `
+[SYSTEM INJECTION: LONG TERM MEMORY RECALL]
+The user's past statements relevant to this context:
+${longTermMemories.map(m => `- ${m.timestamp.toLocaleDateString()}: "${m.content}"`).join('\n')}
+[END INJECTION]`;
+        
+        promptData.messages.push({
+          role: 'user',
+          parts: [{ text: ragContextText }]
+        });
+        
+        promptData.messages.push({
+          role: 'model',
+          parts: [{ text: 'Acknowledged. I have recalled this long-term context.' }]
+        });
+      }
+
+      // Prepend history before current message
+      promptData.messages = [...historicalMessages, ...promptData.messages];
+
+      // Add current user message to Gemini conversation
+      const parts = [{ text: message }];
+      
+      // Async background task: Generate embedding for current message so it can be searched later
+      queueService.enqueue(async () => {
+        const embedding = await ragService.generateEmbedding(message);
+        if (embedding && embedding.length > 0) {
+          userMsgObj.embedding = embedding;
+          await userMsgObj.save();
+        }
+      }, 'User Message Embedding Generation');
+      // Single image upload legacy support
+      if (imageBase64) {
+        try {
+          const matches = imageBase64.match(/^data:(image\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            parts.push({
+              inlineData: { mimeType: matches[1], data: matches[2] }
+            });
+          }
+        } catch (e) {
+          console.error("Failed to parse imageBase64", e);
+        }
+      }
+
+      // Multi-image Vision OS support
+      if (images && Array.isArray(images)) {
+        images.forEach(img => {
+          try {
+            const matches = img.match(/^data:(image\/[a-zA-Z0-9.-]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+              parts.push({
+                inlineData: { mimeType: matches[1], data: matches[2] }
+              });
+            }
+          } catch (e) {
+            console.error("Failed to parse an image from array", e);
+          }
+        });
+      }
+
+      promptData.messages.push({
+        role: 'user',
+        parts: parts
+      });
+
+      // 7. Generate AI response
+      let aiResult;
+      try {
+        aiResult = await aiService.generateAIResponse({
+          ...promptData,
+          energyLevel: finalEnergyLevel,
+          domain: finalDomain,
+          domains: finalDomains,
+          offlineMode: userPref?.offlineMode || false
+        });
+        aiResponseText = aiResult.text;
+        finalConfidenceScore = aiResult.confidenceScore || 95;
+        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+        finalEmergency = aiResult.emergency || false;
+      } catch (aiErr) {
+        console.error('AI Generation Error:', aiErr.message);
+        return res.status(500).json({ success: false, message: 'AI Generation failed: ' + aiErr.message });
+      }
+
+      // Get last 5 AI replies for opening variety check
+      const pastMessages = await Message.find({ conversationId, sender: 'ai' })
+        .sort({ timestamp: -1 })
+        .limit(5);
+      const lastReplies = pastMessages.map(m => m.content);
+
+      // 8. Quality Check (Temporarily disabled for maximum speed)
+      /* 
+      const qualityResult = await aiService.checkResponseQuality(aiResponseText, {
+        mood: finalMood,
+        lastReplies,
+        energyLevel: finalEnergyLevel,
+        relationshipType: promptData.relationshipType,
+        domain: finalDomain,
+        domains: finalDomains
+      });
+
+      if (qualityResult.quality === 'regenerate') {
+        console.log(`[Quality] FAIL: ${qualityResult.reason} — regenerating...`);
+        promptData.systemPrompt += '\n\n---\n\n' +
+          aiService.buildReinforcement(qualityResult.reason, finalMood, finalEnergyLevel);
+
+        aiResult = await aiService.generateAIResponse({
+          ...promptData,
+          energyLevel: finalEnergyLevel,
+          domain: finalDomain,
+          domains: finalDomains,
+          offlineMode: userPref?.offlineMode || false
+        });
+        aiResponseText = aiResult.text;
+        finalConfidenceScore = aiResult.confidenceScore || 95;
+        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+        finalEmergency = aiResult.emergency || false;
+      }
+      */
+
+      // 9. Memory Correction Detection
+      const correctionTriggers = ['adi correct kaadhu', 'wrong ga remember', 'update chesuko',
+        'yeh galat hai', 'that is wrong', 'fix that', 'not ', 'change '];
+      const msgLower = message.toLowerCase();
+      if (correctionTriggers.some(t => msgLower.includes(t))) {
+        const correctMatch = message.match(/(?:not|change)\s+([\w\s]+)\s+(?:to|is)\s+([\w\s]+)/i);
+        if (correctMatch) {
+          const oldInfo = correctMatch[1].trim();
+          const newInfo = correctMatch[2].trim();
+          await memoryService.correctMemory({ userId, oldInfo, newInfo });
+        }
+      }
+
+      // 10. Extract Memories in background using queueService
+      queueService.enqueue(async () => {
+        await memoryService.extractAndSaveMemories({ userId, userMessage: message });
+        await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
+      }, 'Memory and Knowledge Graph Extraction');
+    }
+
+    // 11. Save AI message to Message collection
+    const aiMsgObj = await Message.create({
+      conversationId,
+      userId,
+      sender: 'ai',
+      content: aiResponseText,
+      mood: finalMood,
+      confidenceScore: finalConfidenceScore,
+      sources: finalSources
+    });
+
+    // Async background task: Generate embedding for AI message so RAG can search it later
+    if (aiResponseText && aiResponseText.length > 10) {
+      queueService.enqueue(async () => {
+        const embedding = await ragService.generateEmbedding(aiResponseText);
+        if (embedding && embedding.length > 0) {
+          aiMsgObj.embedding = embedding;
+          await aiMsgObj.save();
+        }
+      }, 'AI Message Embedding Generation');
+    }
+
+    // 11. Update Conversation
+    conversation.lastMessage = aiResponseText;
+    conversation.lastMessageAt = new Date();
+    conversation.messageCount += 2;
+    await conversation.save();
+
+    // 12. Update RelationshipStats
+    const stats = await RelationshipStats.findOne({ userId });
+    if (stats) {
+      stats.totalMessages += 2;
+      stats.trustScore = Math.min(100, stats.trustScore + 1);
+      stats.updateBondLevel();
+      stats.lastInteractionDate = new Date();
+      await stats.save();
+
+      // 13. Check milestones
+      await milestoneService.checkAndTrigger(userId);
+
+      // 14. Trigger Monthly summary if totalMessages % 1000 === 0
+      if (stats.totalMessages % 1000 === 0) {
+        const today = new Date();
+        summaryService.generateSummary({
+          userId,
+          month: today.getMonth() + 1,
+          year: today.getFullYear()
+        });
+      }
+    }
+
+    const responsePayload = {
+      conversationId,
+      userMessage: userMsgObj,
+      aiMessage: aiMsgObj,
+      mood: finalMood,
+      energyLevel: finalEnergyLevel,
+      domain: finalDomain,
+      domains: finalDomains,
+      emergency: finalEmergency,
+      timestamp: aiMsgObj.timestamp
+    };
+
+    // 15. Emit via Socket.IO
+    socketConfig.emitToUser(userId, 'ai_response', responsePayload);
+
+    res.status(200).json({ success: true, ...responsePayload });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/chat/history
+exports.getHistory = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const list = await Conversation.find({ userId, type: 'chat', isDeleted: { $ne: true } })
+      .sort({ lastMessageAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({ success: true, conversations: list });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/chat/public/:id
+exports.getPublicConversation = async (req, res, next) => {
+  try {
+    const conversationId = req.params.id;
+
+    // Fetch conversation without checking userId (Public access)
+    const conversation = await Conversation.findOne({ _id: conversationId, isDeleted: { $ne: true } });
+    
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found or has been deleted.' });
+    }
+
+    // Fetch messages chronological
+    const messages = await Message.find({ conversationId, isDeleted: { $ne: true } })
+      .sort({ timestamp: 1 }); // Return chronological
+
+    res.status(200).json({
+      success: true,
+      conversation,
+      messages
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/chat/:id/messages
+exports.getMessages = async (req, res, next) => {
+  try {
+    const conversationId = req.params.id;
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 30;
+
+    // Verify conversation ownership
+    const conversation = await Conversation.findOne({ _id: conversationId, userId });
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found.' });
+    }
+
+    const messages = await Message.find({ conversationId, isDeleted: { $ne: true } })
+      .sort({ timestamp: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    // Return chronological array (reverse order of fetched)
+    res.status(200).json({
+      success: true,
+      messages: messages.reverse()
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/chat/:id
+exports.deleteConversation = async (req, res, next) => {
+  try {
+    const conversationId = req.params.id;
+    const userId = req.user.id;
+
+    const conversation = await Conversation.findOneAndUpdate(
+      { _id: conversationId, userId },
+      { isDeleted: true },
+      { new: true }
+    );
+
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found.' });
+    }
+
+    res.status(200).json({ success: true, message: 'Conversation deleted successfully.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/chat/:id/messages-from/:messageId
+exports.truncateConversation = async (req, res, next) => {
+  try {
+    const { id: conversationId, messageId } = req.params;
+    const userId = req.user.id;
+
+    const conversation = await Conversation.findOne({ _id: conversationId, userId });
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found.' });
+    }
+
+    const targetMessage = await Message.findOne({ _id: messageId, conversationId });
+    if (!targetMessage) {
+      return res.status(404).json({ success: false, message: 'Target message not found.' });
+    }
+
+    // Delete all messages created at or after the target message's timestamp
+    await Message.deleteMany({
+      conversationId,
+      timestamp: { $gte: targetMessage.timestamp }
+    });
+
+    res.status(200).json({ success: true, message: 'Conversation truncated successfully.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/chat/:id
+exports.updateConversation = async (req, res, next) => {
+  try {
+    const conversationId = req.params.id;
+    const userId = req.user.id;
+    const { isPinned, isArchived, title } = req.body;
+
+    const conversation = await Conversation.findOne({ _id: conversationId, userId });
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found.' });
+    }
+
+    if (isPinned !== undefined) conversation.isPinned = isPinned;
+    if (isArchived !== undefined) conversation.isArchived = isArchived;
+    if (title !== undefined) conversation.title = title;
+
+    await conversation.save();
+
+    res.status(200).json({ success: true, conversation });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/chat/:id/branch/:messageId
+exports.branchConversation = async (req, res, next) => {
+  try {
+    const { id: conversationId, messageId } = req.params;
+    const userId = req.user.id;
+
+    const originalConversation = await Conversation.findOne({ _id: conversationId, userId });
+    if (!originalConversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found.' });
+    }
+
+    const targetMessage = await Message.findOne({ _id: messageId, conversationId });
+    if (!targetMessage) {
+      return res.status(404).json({ success: false, message: 'Target message not found.' });
+    }
+
+    // 1. Create a new Conversation branch
+    const newConversation = new Conversation({
+      userId,
+      title: `(Branch) ${originalConversation.title}`,
+      aiName: originalConversation.aiName,
+      relationshipType: originalConversation.relationshipType,
+      voiceId: originalConversation.voiceId,
+      personalityOverrides: originalConversation.personalityOverrides,
+      lastMessage: targetMessage.content,
+      lastMessageAt: targetMessage.timestamp || targetMessage.createdAt
+    });
+    await newConversation.save();
+
+    // 2. Find all messages up to the target message
+    const messagesToCopy = await Message.find({
+      conversationId,
+      timestamp: { $lte: targetMessage.timestamp }
+    }).sort({ timestamp: 1 });
+
+    // 3. Clone messages to the new conversation
+    const newMessages = messagesToCopy.map(msg => ({
+      conversationId: newConversation._id,
+      sender: msg.sender,
+      content: msg.content,
+      isHtml: msg.isHtml,
+      hasArtifact: msg.hasArtifact,
+      artifactPath: msg.artifactPath,
+      mood: msg.mood,
+      contextUsed: msg.contextUsed,
+      timestamp: msg.timestamp || msg.createdAt
+    }));
+
+    if (newMessages.length > 0) {
+      await Message.insertMany(newMessages);
+    }
+
+    res.status(200).json({ success: true, newConversationId: newConversation._id });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/chat/search
+exports.searchMessages = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    const userId = req.user.id;
+
+    if (!q) {
+      return res.status(400).json({ success: false, message: 'Search keyword query is required.' });
+    }
+
+    // Find all matching messages under conversations owned by the user
+    const userConversations = await Conversation.find({ userId }).select('_id');
+    const conversationIds = userConversations.map(c => c._id);
+
+    const matches = await Message.find({
+      conversationId: { $in: conversationIds },
+      content: { $regex: q, $options: 'i' },
+      isDeleted: false
+    })
+    .populate('conversationId', 'title')
+    .sort({ timestamp: -1 })
+    .limit(50);
+
+    res.status(200).json({ success: true, matches });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/chat/message/:id/feedback
+// Self-Improvement Loop (Phase 7.3)
+exports.submitFeedback = async (req, res, next) => {
+  try {
+    const messageId = req.params.id;
+    const { rating, feedbackText } = req.body; // rating: 1 (Like), -1 (Dislike)
+    const userId = req.user.id;
+
+    const message = await Message.findOne({ _id: messageId, userId });
+    if (!message) {
+      return res.status(404).json({ success: false, message: 'Message not found.' });
+    }
+
+    if (rating !== undefined) message.rating = rating;
+    if (feedbackText !== undefined) message.feedbackText = feedbackText;
+
+    await message.save();
+
+    console.log(`[Self-Improvement Loop] User provided feedback for message ${messageId}. Rating: ${rating}`);
+    res.status(200).json({ success: true, message: 'Feedback recorded successfully.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/chat/execute
+exports.executeCode = async (req, res, next) => {
+  try {
+    const { language, code } = req.body;
+    const fs = require('fs');
+    const path = require('path');
+    const { exec } = require('child_process');
+    const os = require('os');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
+
+    const tmpDir = os.tmpdir();
+    const sessionId = Date.now().toString() + Math.floor(Math.random() * 1000);
+    let output = '';
+    const lang = language.toLowerCase();
+
+    try {
+      if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+        const filePath = path.join(tmpDir, `temp_${sessionId}.js`);
+        fs.writeFileSync(filePath, code);
+        const { stdout, stderr } = await execPromise(`node "${filePath}"`, { timeout: 10000 });
+        output = stdout || stderr;
+      } else if (lang === 'python' || lang === 'py') {
+        const filePath = path.join(tmpDir, `temp_${sessionId}.py`);
+        fs.writeFileSync(filePath, code);
+        const { stdout, stderr } = await execPromise(`python "${filePath}"`, { timeout: 10000 });
+        output = stdout || stderr;
+      } else if (lang === 'c') {
+        const sourcePath = path.join(tmpDir, `temp_${sessionId}.c`);
+        const exePath = path.join(tmpDir, `temp_${sessionId}.exe`);
+        fs.writeFileSync(sourcePath, code);
+        await execPromise(`gcc "${sourcePath}" -o "${exePath}"`, { timeout: 10000 });
+        const { stdout, stderr } = await execPromise(`"${exePath}"`, { timeout: 10000 });
+        output = stdout || stderr;
+      } else if (lang === 'java') {
+        const match = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
+        const className = match ? match[1] : 'Main';
+        const sourcePath = path.join(tmpDir, `${className}.java`);
+        fs.writeFileSync(sourcePath, code);
+        await execPromise(`javac "${sourcePath}"`, { timeout: 10000 });
+        const { stdout, stderr } = await execPromise(`java -cp "${tmpDir}" ${className}`, { timeout: 10000 });
+        output = stdout || stderr;
+      } else if (lang === 'cpp' || lang === 'c++') {
+        const sourcePath = path.join(tmpDir, `temp_${sessionId}.cpp`);
+        const exePath = path.join(tmpDir, `temp_${sessionId}.exe`);
+        fs.writeFileSync(sourcePath, code);
+        await execPromise(`g++ "${sourcePath}" -o "${exePath}"`, { timeout: 10000 });
+        const { stdout, stderr } = await execPromise(`"${exePath}"`, { timeout: 10000 });
+        output = stdout || stderr;
+      } else {
+        output = `Execution for language '${language}' is not supported locally yet. Supported: JS, Python, C, C++, Java.`;
+      }
+    } catch (err) {
+      output = err.stderr || err.stdout || err.message;
+    }
+
+    res.status(200).json({ run: { output: output.trim() || 'Code executed successfully. No output generated.' } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/chat/send-stream
+exports.sendMessageStream = async (req, res, next) => {
+  const { getIO } = require('../config/socket');
+
+  try {
+    const { message, imageBase64, images } = req.body;
+    let { conversationId } = req.body;
+    const userId = req.user.id;
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message content is required.' });
+    }
+
+    // 1. Create or use conversation
+    let conversation;
+    if (conversationId) {
+      conversation = await Conversation.findOne({ _id: conversationId, userId });
+    }
+    if (!conversation) {
+      conversation = await Conversation.create({
+        userId,
+        title: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
+        type: 'chat'
+      });
+      conversationId = conversation._id;
+    }
+
+    // Send metadata via HTTP
+    res.status(200).json({ success: true, conversationId });
+    getIO().to(`user_${userId}`).emit('ai_stream_start', { conversationId });
+
+    // 2. Save user message
+    const userMsgObj = await Message.create({
+      conversationId,
+      userId,
+      sender: 'user',
+      content: message,
+      mood: 'neutral'
+    });
+
+    const userPref = await UserPreference.findOne({ userId });
+    const aiName = userPref?.aiName || 'Maya';
+    const userName = req.user?.fullName || 'Friend';
+
+    const ragService = require('../services/ragService');
+
+    const [safetyOverride, emotionResult, promptData, longTermMemories] = await Promise.all([
+      safetyService.checkSafetyTriggers(message, { userName, aiName }),
+      emotionService.detectEmotion({ userId, text: message }),
+      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId }),
+      ragService.searchGlobalMessageHistory(userId, message, conversationId, 1)
+    ]);
+
+    let aiResponseText = '';
+    let finalMood = 'neutral';
+    let finalEnergyLevel = 'medium';
+    let finalDomain = null;
+    let finalConfidenceScore = 100;
+    let finalSources = [];
+    let finalDomains = [];
+
+    if (safetyOverride) {
+      aiResponseText = safetyOverride.reply;
+      finalMood = safetyOverride.action === 'crisis_override' ? 'sad' : finalMood;
+      getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: aiResponseText });
+    } else {
+      finalMood = emotionResult.mood;
+      finalEnergyLevel = emotionResult.energyLevel || 'medium';
+      userMsgObj.mood = finalMood;
+      await userMsgObj.save();
+
+      finalDomain = promptData.domain;
+      finalDomains = promptData.domains || [];
+
+      const historyLimit = 6;
+      const conversationHistory = await Message.find({ conversationId, _id: { $ne: userMsgObj._id } }).sort({ timestamp: -1 }).limit(historyLimit);
+      const chronologicalHistory = conversationHistory.reverse();
+      const historicalMessages = chronologicalHistory.map(msg => ({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.content.substring(0, 2000) }] }));
+
+      if (longTermMemories && longTermMemories.length > 0) {
+        const ragContextText = `[SYSTEM INJECTION: LONG TERM MEMORY RECALL]\nThe user's past statements relevant to this context:\n${longTermMemories.map(m => `- ${m.timestamp.toLocaleDateString()}: "${m.content}"`).join('\n')}\n[END INJECTION]`;
+        promptData.messages.push({ role: 'user', parts: [{ text: ragContextText }] });
+        promptData.messages.push({ role: 'model', parts: [{ text: 'Acknowledged. I have recalled this long-term context.' }] });
+      }
+
+      promptData.messages = [...historicalMessages, ...promptData.messages];
+      
+      const parts = [{ text: message }];
+      queueService.enqueue(async () => {
+        const embedding = await ragService.generateEmbedding(message);
+        if (embedding && embedding.length > 0) { userMsgObj.embedding = embedding; await userMsgObj.save(); }
+      }, 'User Message Embedding Generation');
+
+      promptData.messages.push({ role: 'user', parts });
+
+      try {
+        const aiResult = await aiService.generateAIResponseStream({
+          ...promptData,
+          energyLevel: finalEnergyLevel,
+          domain: finalDomain,
+          domains: finalDomains,
+          offlineMode: userPref?.offlineMode || false
+        }, (chunkText) => {
+          aiResponseText += chunkText;
+          getIO().to(`user_${userId}`).emit('ai_stream_chunk', { chunk: chunkText });
+        });
+
+        finalConfidenceScore = aiResult.confidenceScore || 95;
+        finalSources = aiResult.sources || ['MEGHA Logic Engine'];
+      } catch (aiErr) {
+        console.error('AI Stream Error:', aiErr.message);
+        getIO().to(`user_${userId}`).emit('ai_stream_error', { error: 'AI Generation failed' });
+        return;
+      }
+
+      const correctionTriggers = ['adi correct kaadhu', 'wrong ga remember', 'update chesuko', 'yeh galat hai', 'that is wrong', 'fix that', 'not ', 'change '];
+      const msgLower = message.toLowerCase();
+      if (correctionTriggers.some(t => msgLower.includes(t))) {
+        const correctMatch = message.match(/(?:not|change)\s+([\w\s]+)\s+(?:to|is)\s+([\w\s]+)/i);
+        if (correctMatch) {
+          const oldInfo = correctMatch[1].trim();
+          const newInfo = correctMatch[2].trim();
+          await memoryService.correctMemory({ userId, oldInfo, newInfo });
+        }
+      }
+
+      queueService.enqueue(async () => {
+        await memoryService.extractAndSaveMemories({ userId, userMessage: message });
+        await memoryService.extractKnowledgeGraph({ userId, userMessage: message });
+      }, 'Memory and Knowledge Graph Extraction');
+    }
+
+    const aiMsgObj = await Message.create({
+      conversationId,
+      userId,
+      sender: 'ai',
+      content: aiResponseText,
+      mood: finalMood,
+      confidenceScore: finalConfidenceScore,
+      sources: finalSources
+    });
+
+    if (aiResponseText && aiResponseText.length > 10) {
+      queueService.enqueue(async () => {
+        const embedding = await ragService.generateEmbedding(aiResponseText);
+        if (embedding && embedding.length > 0) { aiMsgObj.embedding = embedding; await aiMsgObj.save(); }
+      }, 'AI Message Embedding Generation');
+    }
+
+    conversation.lastMessage = aiResponseText;
+    conversation.lastMessageAt = new Date();
+    conversation.messageCount += 2;
+    await conversation.save();
+
+    const stats = await RelationshipStats.findOne({ userId });
+    if (stats) {
+      stats.totalMessages += 2;
+      stats.trustScore = Math.min(100, stats.trustScore + 1);
+      stats.updateBondLevel();
+      stats.lastInteractionDate = new Date();
+      await stats.save();
+      await milestoneService.checkAndTrigger(userId);
+      if (stats.totalMessages % 1000 === 0) {
+        const today = new Date();
+        summaryService.generateSummary({ userId, month: today.getMonth() + 1, year: today.getFullYear() });
+      }
+    }
+
+    getIO().to(`user_${userId}`).emit('ai_response', {
+      userMessage: userMsgObj,
+      aiMessage: aiMsgObj,
+      conversationId,
+      mood: finalMood
+    });
+
+  } catch (err) {
+    console.error('Stream Setup Error:', err);
+    require('../config/socket').getIO().to(`user_${req.user?.id}`).emit('ai_stream_error', { error: err.message });
+  }
+};
+
+exports.synthesizeVoice = async (req, res) => {
+  res.status(501).json({ error: 'Not Implemented (Lost during git revert)' });
+};
+
+exports.inviteToGroup = async (req, res, next) => {
+  res.status(501).json({ error: 'Not Implemented (Lost during git revert)' });
+};

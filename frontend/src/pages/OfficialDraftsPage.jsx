@@ -48,7 +48,7 @@ export default function OfficialDraftsPage() {
   const [designation, setDesignation] = useState('');
   const [domain, setDomain] = useState('');
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const generate = async () => {
     setLoading(true);

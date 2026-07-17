@@ -16,7 +16,7 @@ export default function CoverLetterPage() {
   const [activeTab, setActiveTab] = useState('professional');
   const [copied, setCopied] = useState(false);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const generate = async () => {
     if (!form.resumeText || !form.targetRole || !form.companyName) {

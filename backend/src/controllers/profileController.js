@@ -3,6 +3,7 @@ const RelationshipStats = require('../models/RelationshipStats');
 const Message = require('../models/Message');
 const MoodLog = require('../models/MoodLog');
 const emotionService = require('../services/emotionService');
+const mongoose = require('mongoose');
 
 // POST /api/profile/language
 exports.setLanguage = async (req, res, next) => {
@@ -237,6 +238,22 @@ exports.getRelationshipJourney = async (req, res, next) => {
     const firstMsg = await Message.findOne({ userId }).sort({ timestamp: 1 });
     const firstMessageDate = firstMsg ? firstMsg.timestamp : stats.friendshipStartDate;
 
+    // Fetch genuine daily activity (number of messages sent by user per day)
+    const dailyActivityRaw = await Message.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), sender: 'user' } },
+      { 
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    const dailyActivity = {};
+    dailyActivityRaw.forEach(day => {
+      dailyActivity[day._id] = day.count;
+    });
+
     res.status(200).json({
       success: true,
       stats,
@@ -244,7 +261,8 @@ exports.getRelationshipJourney = async (req, res, next) => {
       milestonesReached: stats.milestonesReached,
       bondLevelHistory: [
         { level: 1, name: 'New Friend', date: stats.friendshipStartDate }
-      ]
+      ],
+      dailyActivity
     });
   } catch (err) {
     next(err);

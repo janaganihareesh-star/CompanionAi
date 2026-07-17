@@ -88,7 +88,11 @@ export default function HomePage() {
     else if (isEvening) setGreeting('Good Evening');
     else setGreeting('Good Night');
 
-    const token = localStorage.getItem('megha-token');
+    const token = localStorage.getItem('closer-token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
 
     // Fetch daily facts
     axios.get('/api/profile/preferences', { headers: { Authorization: `Bearer ${token}` } })
@@ -98,10 +102,15 @@ export default function HomePage() {
       .then(() => {
         return axios.get('/api/notifications', { headers: { Authorization: `Bearer ${token}` } });
       })
-      .catch(e => console.error(e));
+      .catch(e => {
+        console.error(e);
+        if (e.response && e.response.status === 401) {
+          navigate('/login');
+        }
+      });
 
     // Select a random fact about the app, ensuring it doesn't repeat the last shown one if possible
-    const lastFactIndexStr = localStorage.getItem('megha_last_fact_index');
+    const lastFactIndexStr = localStorage.getItem('closer_last_fact_index');
     let lastFactIndex = lastFactIndexStr !== null ? parseInt(lastFactIndexStr, 10) : -1;
 
     let nextIndex = Math.floor(Math.random() * APP_FACTS.length);
@@ -109,7 +118,7 @@ export default function HomePage() {
       nextIndex = (nextIndex + 1) % APP_FACTS.length;
     }
 
-    localStorage.setItem('megha_last_fact_index', nextIndex.toString());
+    localStorage.setItem('closer_last_fact_index', nextIndex.toString());
 
     setDailyFact({
       factType: 'app_feature',
@@ -120,10 +129,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (stats && !milestoneShown) {
-      if (stats.trustScore >= 10 && localStorage.getItem('megha-milestone-welcomed') !== 'true') {
+      if (stats.trustScore >= 10 && localStorage.getItem('closer-milestone-welcomed') !== 'true') {
         setMilestoneOpen(true);
         setMilestoneShown(true);
-        localStorage.setItem('megha-milestone-welcomed', 'true');
+        localStorage.setItem('closer-milestone-welcomed', 'true');
       }
     }
   }, [stats, milestoneShown]);

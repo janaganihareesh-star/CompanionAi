@@ -60,7 +60,9 @@ const RELATIONSHIP_BOUNDARIES = [
   'formal',
   'friendly',
   'warm',
-  'very_caring'
+  'very_caring',
+  'family',
+  'mentor'
 ];
 
 module.exports = {

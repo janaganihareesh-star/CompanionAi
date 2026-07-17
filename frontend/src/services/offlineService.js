@@ -1,6 +1,6 @@
 import { openDB } from 'idb';
 
-const DB_NAME = 'megha-ai-offline-db';
+const DB_NAME = 'closer-ai-offline-db';
 const STORE_NAME = 'chats-queue';
 
 const offlineService = {

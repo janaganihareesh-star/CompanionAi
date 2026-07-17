@@ -8,80 +8,78 @@ const axios = require('axios');
  * @param {string} code - The source code to execute
  */
 async function executeCodeRemote(language, code) {
-  // Normalize languages for Piston
-  let pistonLang = language.toLowerCase();
-  let version = '*';
+  const { execSync } = require('child_process');
+  const fs = require('fs');
+  const path = require('path');
+  const crypto = require('crypto');
+  const os = require('os');
+  
+  const tmpDir = os.tmpdir();
+  const fileId = crypto.randomBytes(4).toString('hex');
+  
+  let output = '';
+  let success = false;
+  let command = '';
+  let tmpFile = '';
 
-  // Map common names to piston names
-  const langMap = {
-    'js': 'javascript',
-    'py': 'python',
-    'node': 'javascript',
-    'c++': 'cpp'
-  };
-
-  if (langMap[pistonLang]) {
-    pistonLang = langMap[pistonLang];
-  }
-
-  // Map known good versions (Piston supports '*' for latest)
-  const versionMap = {
-    'python': '3.10.0',
-    'javascript': '18.15.0',
-    'cpp': '10.2.0',
-    'java': '15.0.2',
-    'c': '10.2.0'
-  };
-
-  if (versionMap[pistonLang]) {
-    version = versionMap[pistonLang];
-  }
-
-  const payload = {
-    language: pistonLang,
-    version: version,
-    files: [
-      {
-        content: code
-      }
-    ],
-    stdin: "",
-    args: [],
-    compile_timeout: 10000,
-    run_timeout: 3000,
-    compile_memory_limit: -1,
-    run_memory_limit: -1
-  };
-
+  const lang = language.toLowerCase();
+  
   try {
-    const response = await axios.post('https://emkc.org/api/v2/piston/execute', payload);
-    const result = response.data;
-
-    let output = '';
-    if (result.compile && result.compile.output) {
-      output += `[Compiler Output]\n${result.compile.output}\n`;
+    if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+      tmpFile = path.join(tmpDir, `script_${fileId}.js`);
+      fs.writeFileSync(tmpFile, code);
+      command = `node ${tmpFile}`;
+    } else if (lang === 'python' || lang === 'py') {
+      tmpFile = path.join(tmpDir, `script_${fileId}.py`);
+      fs.writeFileSync(tmpFile, code);
+      command = `python ${tmpFile}`; // Assuming 'python' is in PATH on Windows
+    } else if (lang === 'cpp' || lang === 'c++') {
+      tmpFile = path.join(tmpDir, `script_${fileId}.cpp`);
+      const outFile = path.join(tmpDir, `script_${fileId}.exe`);
+      fs.writeFileSync(tmpFile, code);
+      // Compile & Run
+      execSync(`g++ ${tmpFile} -o ${outFile}`, { stdio: 'pipe' });
+      command = outFile;
+    } else if (lang === 'java') {
+      tmpFile = path.join(tmpDir, 'Main.java');
+      fs.writeFileSync(tmpFile, code);
+      command = `java ${tmpFile}`; // Java 11+ supports running single files directly
+    } else if (lang === 'rust' || lang === 'rs') {
+      tmpFile = path.join(tmpDir, `script_${fileId}.rs`);
+      const outFile = path.join(tmpDir, `script_${fileId}.exe`);
+      fs.writeFileSync(tmpFile, code);
+      execSync(`rustc ${tmpFile} -o ${outFile}`, { stdio: 'pipe' });
+      command = outFile;
+    } else if (lang === 'go') {
+      tmpFile = path.join(tmpDir, `script_${fileId}.go`);
+      fs.writeFileSync(tmpFile, code);
+      command = `go run ${tmpFile}`;
+    } else {
+      return { success: false, output: `Unsupported language: ${language}` };
     }
-    if (result.run && result.run.output) {
-      output += result.run.output;
-    }
 
-    if (!output) {
-      output = "Execution completed successfully with no console output.";
-    }
-
-    return {
-      success: result.run?.code === 0,
-      output: output.trim(),
-      language: result.language,
-      version: result.version
-    };
+    // Execute the final command with a strict timeout
+    output = execSync(command, { timeout: 10000, encoding: 'utf-8', stdio: 'pipe' });
+    success = true;
+    if (!output.trim()) output = "Execution completed successfully with no console output.";
   } catch (error) {
-    console.error('Piston Execution Error:', error.response?.data || error.message);
-    return {
-      success: false,
-      output: `Failed to execute code: ${error.message}`
-    };
+    console.error('Local Sandbox Execution Error:', error.message);
+    success = false;
+    output = error.stderr ? error.stderr.toString() : error.message;
   }
+
+  // Cleanup temporary files
+  try {
+    if (tmpFile && fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+    if (command && command.endsWith('.exe') && fs.existsSync(command)) fs.unlinkSync(command);
+  } catch (e) {}
+
+  return {
+    success,
+    output: output.trim(),
+    language: lang,
+    version: 'local'
+  };
 }
 
 module.exports = {

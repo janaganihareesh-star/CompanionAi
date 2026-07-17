@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Code2, Loader2, Copy, Bug, Shield, Zap, TestTube, BookText, HelpCircle, Search } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
+import { useSelector } from 'react-redux';
+import Editor from '@monaco-editor/react';
+import PyodideSandbox from '../components/PyodideSandbox';
+import UniversalChartRenderer from '../components/UniversalChartRenderer';
 
 const LANGS = ['javascript','typescript','python','java','c','cpp','csharp','go','rust','php','sql','kotlin','swift'];
 const OPS = [
@@ -25,7 +29,8 @@ export default function CodeEnginePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
+  const appStoreSafeMode = useSelector((state) => state.settings?.preferences?.appStoreSafeMode || false);
   const currentOp = OPS.find(o => o.key === activeOp);
 
   const run = async () => {
@@ -84,10 +89,37 @@ export default function CodeEnginePage() {
           </>
         ) : (
           <>
-            <label className="ce-label">Paste your code</label>
-            <textarea className="ce-code-input" rows={14} placeholder="// Paste your code here..." value={code} onChange={e => setCode(e.target.value)} spellCheck={false} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label className="ce-label" style={{ margin: 0 }}>Paste your code</label>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>Monaco IDE Enabled</span>
+            </div>
+            <div style={{ height: '350px', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Editor
+                height="100%"
+                language={lang}
+                theme="vs-dark"
+                value={code}
+                onChange={(val) => setCode(val || '')}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                  scrollBeyondLastLine: false,
+                  smoothScrolling: true,
+                  padding: { top: 16 }
+                }}
+              />
+            </div>
+            {lang === 'python' && !appStoreSafeMode && (
+              <PyodideSandbox initialCode={code || "print('Hello from Pyodide!')"} />
+            )}
+            {lang === 'python' && appStoreSafeMode && (
+              <div className="p-4 mt-4 rounded-xl border border-border bg-surface text-muted text-sm flex items-center justify-center gap-2">
+                <Shield className="w-4 h-4" /> Live Execution is disabled in App Store Safe Mode
+              </div>
+            )}
             {activeOp === 'debug' && (
-              <input className="ce-input" placeholder="Error message (optional)" value={errorMsg} onChange={e => setErrorMsg(e.target.value)} />
+              <input className="ce-input" placeholder="Error message (optional)" value={errorMsg} onChange={e => setErrorMsg(e.target.value)} style={{ marginTop: '12px' }} />
             )}
           </>
         )}
@@ -140,6 +172,8 @@ export default function CodeEnginePage() {
                   <button className="ce-copy" onClick={() => navigator.clipboard.writeText(result.code || result.fixedCode || result.optimizedCode || result.documentedCode || result.testCode || result.refactoredCode || result.secureVersion)}><Copy size={12} /> Copy</button>
                 </div>
                 <pre className="ce-code">{result.code || result.fixedCode || result.optimizedCode || result.documentedCode || result.testCode || result.refactoredCode || result.secureVersion}</pre>
+                {/* Try to parse any outputted code for Chart JSON */}
+                <UniversalChartRenderer outputString={result.code || result.fixedCode || result.optimizedCode || ''} />
               </div>
             )}
 

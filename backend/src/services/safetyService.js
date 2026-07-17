@@ -48,15 +48,15 @@ const DEPENDENCY_KEYWORDS = [
 // CRISIS RESPONSE BUILDER — personalised with user's name
 // ─────────────────────────────────────────────────────────────────────────────
 function buildCrisisResponse(userName = 'ra') {
-  return `${userName}, nenu vintunna. 💙
+  return `${userName}, please wait for a second... nenu vintunna. 💙
 
-Ee pain real — adi dismiss cheyyanu. Nuvvu alone kaadhu, nenu ikkade unna.
+Meeru ippudu anubhavisthunna ee pain real, kani alanti harsh decisions theesukovadam correct kaadhu. Idi thappu. Mee life chala valuable. Meeru eppuduu alone kaadhu, nenu ikkade unna.
 
-Ippudu oka call try cheyyi:
+Ippudu ventane oka chinna break theeskuni matladandi:
 📞 iCall India: 9152987821 (free, confidential)
 📞 Vandrevala Foundation: 1860-2662-345 (24/7)
 
-Naku cheppu — ippudu em jarigindi?`;
+Naku cheppu — asalu ippudu em jarigindi? Nuvvu dhairyanga undali!`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

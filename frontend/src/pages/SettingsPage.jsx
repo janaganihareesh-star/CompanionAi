@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Sidebar from '../components/Sidebar';
 import { fetchPreferences, updatePreferences } from '../store/settingsSlice';
 import useTheme from '../hooks/useTheme';
+import HardwareManager from '../components/HardwareManager';
 import axios from 'axios';
 import {
   Settings,
@@ -48,17 +49,18 @@ export default function SettingsPage() {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
   const { preferences, isLoading } = useSelector((state) => state.settings);
-  const { mode, toggleTheme } = useTheme();
+  const { mode, setTheme } = useTheme();
 
   // Local state for inputs
   const [aiName, setAiName] = useState('Companion');
   const [aiGender, setAiGender] = useState('female');
-  const [language, setLanguage] = useState('English');
-  const [isLangOpen, setIsLangOpen] = useState(false);
   const [boundary, setBoundary] = useState('friendly');
   const [notifications, setNotifications] = useState(true);
   const [activePersonaId, setActivePersonaId] = useState('maya_companion');
+  const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState('');
+  const [morningReport, setMorningReport] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
+  const [appStoreSafeMode, setAppStoreSafeMode] = useState(false);
   
   // Trusted contacts
   const [contact1Name, setContact1Name] = useState('');
@@ -83,11 +85,13 @@ export default function SettingsPage() {
     if (preferences) {
       setAiName(preferences.aiName || 'Companion');
       setAiGender(preferences.aiGender || 'female');
-      setLanguage(preferences.language || 'English');
       setBoundary(preferences.relationshipBoundary || 'friendly');
       setNotifications(preferences.notificationsEnabled !== undefined ? preferences.notificationsEnabled : true);
       setActivePersonaId(preferences.activePersonaId || 'maya_companion');
       setOfflineMode(preferences.offlineMode || false);
+      setElevenLabsVoiceId(preferences.elevenLabsVoiceId || '');
+      setMorningReport(preferences.morningReportEnabled || false);
+      setAppStoreSafeMode(preferences.appStoreSafeMode || false);
       
       if (preferences.trustedContact1) {
         setContact1Name(preferences.trustedContact1.name || '');
@@ -102,7 +106,7 @@ export default function SettingsPage() {
 
   const handleThemeSwitch = async (targetMode) => {
     if (mode !== targetMode) {
-      toggleTheme(); // Local redux toggle
+      setTheme(targetMode); // Local redux change
       try {
         await axios.put('/api/profile/theme', { themeMode: targetMode }, {
           headers: { Authorization: `Bearer ${token}` }
@@ -120,11 +124,13 @@ export default function SettingsPage() {
     const updates = {
       aiName,
       aiGender,
-      language,
       relationshipBoundary: boundary,
       notificationsEnabled: notifications,
       activePersonaId,
       offlineMode,
+      appStoreSafeMode,
+      elevenLabsVoiceId,
+      morningReportEnabled: morningReport,
       trustedContact1: { name: contact1Name, email: contact1Email },
       trustedContact2: { name: contact2Name, email: contact2Email }
     };
@@ -149,7 +155,7 @@ export default function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `megha-ai-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `closer-ai-data-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Your data has been exported successfully! 📦');
@@ -185,7 +191,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-bg text-text">
+    <div className="flex h-screen overflow-hidden bg-bg text-text">
       <Sidebar />
 
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -245,6 +251,38 @@ export default function SettingsPage() {
                   </div>
                   <span className="text-[10px] uppercase font-bold text-muted">LIGHT MODE</span>
                 </div>
+
+                {/* Cyberpunk Swatch */}
+                <div
+                  onClick={() => handleThemeSwitch('cyberpunk')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition flex justify-between items-center ${
+                    mode === 'cyberpunk'
+                      ? 'border-accent bg-panel text-accent font-bold shadow-sm'
+                      : 'border-border/60 hover:border-accent/40 bg-panel/30 text-text'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-fuchsia-500 text-fuchsia" />
+                    <span className="text-xs">Neon City (Cyberpunk)</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold text-muted">CYBERPUNK</span>
+                </div>
+
+                {/* Ocean Swatch */}
+                <div
+                  onClick={() => handleThemeSwitch('ocean')}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition flex justify-between items-center ${
+                    mode === 'ocean'
+                      ? 'border-accent bg-panel text-accent font-bold shadow-sm'
+                      : 'border-border/60 hover:border-accent/40 bg-panel/30 text-text'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-cyan-500 text-cyan" />
+                    <span className="text-xs">Deep Blue Sea</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold text-muted">OCEAN</span>
+                </div>
               </div>
             </div>
 
@@ -255,7 +293,7 @@ export default function SettingsPage() {
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="text-xs font-bold text-muted">Companion AI Name</label>
                   <input
                     type="text"
@@ -265,31 +303,16 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5 relative">
-                  <label className="text-xs font-bold text-muted font-outfit">Primary Conversation Language</label>
-                  <div
-                    onClick={() => setIsLangOpen(!isLangOpen)}
-                    className="w-full px-4 py-3 bg-panel border border-border rounded-xl text-sm focus:border-accent outline-none text-text cursor-pointer flex justify-between items-center"
-                  >
-                    <span>{LANGS.find(l => l.value === language)?.label || 'English'}</span>
-                    <ChevronDown className="w-4 h-4 text-muted" />
-                  </div>
-                  {isLangOpen && (
-                    <div className="absolute top-[100%] left-0 w-full mt-2 bg-panel border border-border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
-                      {LANGS.map(lang => (
-                        <div
-                          key={lang.value}
-                          onClick={() => {
-                            setLanguage(lang.value);
-                            setIsLangOpen(false);
-                          }}
-                          className={`px-4 py-3 cursor-pointer text-sm hover:bg-surface transition ${language === lang.value ? 'bg-accent/10 text-accent font-bold' : 'text-text'}`}
-                        >
-                          {lang.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-xs font-bold text-muted">Custom ElevenLabs Voice ID (Optional)</label>
+                  <input
+                    type="text"
+                    value={elevenLabsVoiceId}
+                    onChange={(e) => setElevenLabsVoiceId(e.target.value)}
+                    placeholder="e.g. pNInz6obpgDQGcFmaJcg"
+                    className="w-full px-4 py-3 bg-panel border border-border rounded-xl text-sm focus:border-accent outline-none text-text"
+                  />
+                  <p className="text-[10px] text-muted ml-1">If provided, this Voice ID will be used for AI voice synthesis instead of default voices.</p>
                 </div>
               </div>
 
@@ -299,7 +322,7 @@ export default function SettingsPage() {
                   <label className="text-base font-bold text-text font-outfit flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-accent" /> Companion Vibe & Persona
                   </label>
-                  <p className="text-xs text-muted">Choose how MEGHA AI should emotionally connect with you.</p>
+                  <p className="text-xs text-muted">Choose how CloserAI should emotionally connect with you.</p>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -370,6 +393,34 @@ export default function SettingsPage() {
                   <span className="block text-[10px] text-muted">Bypass cloud APIs and run securely on local Ollama engine (Port 11434).</span>
                 </div>
               </label>
+
+              <label className="flex items-center gap-3 p-4 bg-panel border border-border rounded-xl cursor-pointer hover:bg-panel/85 transition select-none">
+                <input
+                  type="checkbox"
+                  checked={morningReport}
+                  onChange={(e) => setMorningReport(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-cyan focus:ring-cyan accent-cyan cursor-pointer"
+                />
+                <div className="text-left">
+                  <span className="block text-xs font-bold text-text">Autonomous Morning Report</span>
+                  <span className="block text-[10px] text-muted">Allow {aiName || 'Closer'} to run daily background searches and send a morning intelligence brief.</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 p-4 bg-panel border border-rose-500/30 rounded-xl cursor-pointer hover:bg-rose-500/10 transition select-none">
+                <input
+                  type="checkbox"
+                  checked={appStoreSafeMode}
+                  onChange={(e) => setAppStoreSafeMode(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-rose-500 focus:ring-rose-500 accent-rose-500 cursor-pointer"
+                />
+                <div className="text-left">
+                  <span className="block text-xs font-bold text-rose-500 flex items-center gap-2">
+                    <ShieldAlert className="w-3 h-3" /> App Store Review Safe Mode
+                  </span>
+                  <span className="block text-[10px] text-muted">Temporarily disable dynamic Pyodide execution, background voice, and native OS capabilities to pass strict App Store review guidelines.</span>
+                </div>
+              </label>
             </div>
 
             {/* SECTION 4: TRUSTED CONTACTS SETUP */}
@@ -427,13 +478,18 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* SECTION 5: DATA PRIVACY & ACCOUNT */}
+            {/* SECTION 5: HARDWARE COMPANIONS */}
+            <div className="p-6 rounded-2xl bg-surface border border-border shadow-card space-y-4">
+              <HardwareManager />
+            </div>
+
+            {/* SECTION 6: DATA PRIVACY & ACCOUNT */}
             <div className="p-6 rounded-2xl bg-surface border border-rose/20 shadow-card space-y-4">
               <div className="flex gap-2 items-center">
                 <ShieldAlert className="w-6 h-6 text-rose" />
                 <div>
                   <h3 className="text-lg font-bold font-outfit text-text">Data Privacy & Account</h3>
-                  <p className="text-muted text-[10px]">Export or permanently delete all your personal data stored in MEGHA AI, \${userName}.</p>
+                  <p className="text-muted text-[10px]">Export or permanently delete all your personal data stored in CloserAI, \${userName}.</p>
                 </div>
               </div>
 
@@ -459,7 +515,7 @@ export default function SettingsPage() {
                 <div className="p-4 bg-rose/5 border border-rose/20 rounded-xl space-y-2">
                   <span className="text-xs font-bold text-rose block">⚠️ Delete My Account</span>
                   <p className="text-[10px] text-muted leading-relaxed">
-                    Permanently erase all your data from MEGHA AI. This cannot be reversed, \${userName}.
+                    Permanently erase all your data from CloserAI. This cannot be reversed, \${userName}.
                   </p>
                   <button
                     type="button"

@@ -25,7 +25,7 @@ export default function DocumentAIPage() {
   const [result, setResult] = useState(null);
   const [targetLang, setTargetLang] = useState('Telugu');
   const fileRef = useRef();
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const handleFile = async (file) => {
     setFileName(file.name);

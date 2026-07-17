@@ -5,6 +5,8 @@ import { getAuthConfig } from './authSlice';
 const initialState = {
   preferences: null,
   stats: null,
+  minimalMode: false,
+  selectedModel: 'gemini-1.5-flash',
   isLoading: false,
   error: null
 };
@@ -52,7 +54,14 @@ export const fetchRelationshipStats = createAsyncThunk(
 const settingsSlice = createSlice({
   name: 'settings',
   initialState,
-  reducers: {},
+  reducers: {
+    toggleMinimalMode: (state) => {
+      state.minimalMode = !state.minimalMode;
+    },
+    setModel: (state, action) => {
+      state.selectedModel = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPreferences.pending, (state) => {
@@ -76,4 +85,5 @@ const settingsSlice = createSlice({
   }
 });
 
+export const { toggleMinimalMode, setModel } = settingsSlice.actions;
 export default settingsSlice.reducer;

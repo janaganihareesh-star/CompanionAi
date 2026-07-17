@@ -13,5 +13,6 @@ router.post('/documentation', c.generateDocs);
 router.post('/explain',       c.explainCode);
 router.post('/security',      c.securityReview);
 router.get('/languages',      c.getSupportedLanguages);
+router.post('/execute',       c.executeCode);
 
 module.exports = router;

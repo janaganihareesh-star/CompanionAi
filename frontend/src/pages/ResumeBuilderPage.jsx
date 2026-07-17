@@ -25,7 +25,7 @@ export default function ResumeBuilderPage() {
   const [education, setEducation] = useState([{ degree: '', institution: '', year: '' }]);
   const [projects, setProjects] = useState([{ ...defaultProject }]);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const generate = async () => {
     setLoading(true);

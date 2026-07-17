@@ -19,7 +19,7 @@ export default function SalaryEnginePage() {
   const [activeScript, setActiveScript] = useState('email');
   const [expandedFactor, setExpandedFactor] = useState(null);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const doResearch = async () => {
     setLoading(true);

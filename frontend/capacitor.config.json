@@ -1,6 +1,6 @@
 {
-  "appId": "com.meghaai.app",
-  "appName": "Megha AI",
+  "appId": "com.closer.ai",
+  "appName": "CloserAI",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "plugins": {
@@ -11,10 +11,17 @@
         "alert"
       ]
     },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#7C3AED",
+      "sound": "beep.wav"
+    },
     "BackgroundRunner": {
-      "label": "com.meghaai.app.background",
-      "src": "src/background.js",
-      "event": "meghaBackgroundVoice"
+      "label": "com.closer.ai.background",
+      "src": "background.js",
+      "event": "voice_assistant_listen",
+      "repeat": false,
+      "autoStart": true
     }
   }
 }

@@ -3,8 +3,27 @@ const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
+const pluginService = require('./services/pluginService');
 require('dotenv').config();
 
+// Global Error Handlers for Stability
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL] Uncaught Exception:', err);
+  // Do not exit, try to recover
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[CRITICAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  // Do not exit, try to recover
+});
+
+// Initialize dynamic plugins
+pluginService.loadPlugins();
+
+const { setupTelegramBot } = require('./bot/telegramBot');
+// Start Telegram Bot Integration
+setupTelegramBot();
 
 // ─────────────────────────────────────────────────────────────────────────────
 const connectDB = require('./config/db');
@@ -13,42 +32,7 @@ const socketConfig = require('./config/socket');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const errorHandler = require('./middleware/errorHandler');
 
-const authRoutes = require('./routes/auth');
-const chatRoutes = require('./routes/chat');
-const voiceRoutes = require('./routes/voice');
-const memoryRoutes = require('./routes/memory');
-const goalRoutes = require('./routes/goals');
-const achievementRoutes = require('./routes/achievements');
-const resumeRoutes = require('./routes/resume');
-const interviewRoutes = require('./routes/interview');
-const learningRoutes = require('./routes/learning');
-const notificationRoutes = require('./routes/notifications');
-const profileRoutes = require('./routes/profile');
-const relationshipRoutes = require('./routes/relationship');
-const moodRoutes = require('./routes/mood');
-const dreamboardRoutes = require('./routes/dreamboard');
-const datesRoutes = require('./routes/dates');
-const weeklyReflectionRoutes = require('./routes/weeklyReflection');
-const summaryRoutes = require('./routes/summary');
-const settingsRoutes = require('./routes/settings');
-const timelineRoutes = require('./routes/timeline');
-const careerRoutes = require('./routes/career');
-const projectRoutes = require('./routes/project');
-const productivityRoutes = require('./routes/productivity');
-const searchRoutes = require('./routes/search');
-const pushRoutes = require('./routes/push');
-
-// Engines 35-46
-const documentRoutes    = require('./routes/document');
-const codeRoutes        = require('./routes/code');
-const translateRoutes   = require('./routes/translate');
-const promptsRoutes     = require('./routes/prompts');
-const contentRoutes     = require('./routes/content');
-const academicRoutes    = require('./routes/academic');
-const calculateRoutes   = require('./routes/calculate');
-const draftRoutes       = require('./routes/draft');
-const businessRoutes    = require('./routes/business');
-const ttsRoutes         = require('./routes/tts');
+const apiRoutes = require('./routes/index');
 
 const app = express();
 const server = http.createServer(app);
@@ -59,12 +43,7 @@ const server = http.createServer(app);
 socketConfig.init(server);
 
 // Start scheduled wellness cron alerts
-const { initCronJobs } = require('./services/notificationService');
-initCronJobs();
-
-// Phase 3: Background Proactive Agents (AI-driven check-ins)
-const { startProactiveAgents } = require('./services/cronService');
-startProactiveAgents();
+// Moved to worker.js for modular scaling
 
 // Security & Logging Middleware
 app.use(helmet({
@@ -75,58 +54,41 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL, 
     'http://localhost:5173',
-    'https://megha-ai-3mru.vercel.app'
+    'https://closer-ai-3mru.vercel.app'
   ].filter(Boolean),
   credentials: true
 }));
 
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Rate Limiting disabled by user request
-// app.use(generalLimiter);
+// Enable Rate Limiting (Phase 4 Security)
+// Enable Rate Limiting (Phase 4 Security)
+app.use(generalLimiter);
 
+// API Gateway Configuration (V15 Microservices)
+const { createProxyMiddleware } = require('http-proxy-middleware');
+
+app.use('/api/os', createProxyMiddleware({ 
+    target: 'http://localhost:7001', 
+    changeOrigin: true 
+}));
+
+app.use('/api/code', createProxyMiddleware({ 
+    target: 'http://localhost:7001', 
+    changeOrigin: true 
+}));
+
+app.use('/api/document', createProxyMiddleware({ 
+    target: 'http://localhost:7002', 
+    changeOrigin: true 
+}));
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/voice', voiceRoutes);
-app.use('/api/memory', memoryRoutes);
-app.use('/api/goals', goalRoutes);
-app.use('/api/achievements', achievementRoutes);
-app.use('/api/resume', resumeRoutes);
-app.use('/api/interview', interviewRoutes);
-app.use('/api/learning', learningRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/profile', profileRoutes);
-app.use('/api/relationship', relationshipRoutes);
-app.use('/api/mood', moodRoutes);
-app.use('/api/dreamboard', dreamboardRoutes);
-app.use('/api/dates', datesRoutes);
-app.use('/api/weekly-reflection', weeklyReflectionRoutes);
-app.use('/api/summary', summaryRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/timeline', timelineRoutes);
-app.use('/api/career', careerRoutes);
-app.use('/api/project', projectRoutes);
-app.use('/api/productivity', productivityRoutes);
-app.use('/api/search', searchRoutes);
-app.use('/api/push', pushRoutes);
-app.use('/api/tts', ttsRoutes);
-
-// Engines 35-46
-app.use('/api/document',  documentRoutes);
-app.use('/api/code',      codeRoutes);
-app.use('/api/translate', translateRoutes);
-app.use('/api/prompts',   promptsRoutes);
-app.use('/api/content',   contentRoutes);
-app.use('/api/academic',  academicRoutes);
-app.use('/api/calculate', calculateRoutes);
-app.use('/api/draft',     draftRoutes);
-app.use('/api/business',  businessRoutes);
+app.use('/api', apiRoutes);
 
 app.get('/', (req, res) => {
-  res.send('<h2>Megha AI Backend API is running successfully.</h2><p>Please use the frontend URL (e.g., http://localhost:5173/) to access the application interface.</p>');
+  res.send('<h2>CloserAI Backend API is running successfully.</h2><p>Please use the frontend URL (e.g., http://localhost:5173/) to access the application interface.</p>');
 });
 
 app.get('/health', (req, res) => {
@@ -136,25 +98,70 @@ app.get('/health', (req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-const { initScheduler } = require('./services/schedulerService');
+// Background services (Agenda/Cron) have been moved to worker.js
 
 const startServer = async () => {
   try {
     await connectDB();
     await verifySMTP();
     
-    // Initialize Workflow OS Scheduler
-    await initScheduler();
+    // Background services (Agenda/Cron) have been moved to worker.js
 
     const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
-      console.log(`Server Listening On Port ${PORT}`);
+    
+    // Auto-healing for Windows Nodemon Port Locks
+    server.on('error', (e) => {
+      if (e.code === 'EADDRINUSE') {
+        console.warn(`⚠️ Port ${PORT} is in use. Automatic self-healing initiated (Killing zombie process)...`);
+        const { exec } = require('child_process');
+        exec(`powershell -Command "Stop-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess -Force"`, (err) => {
+          setTimeout(() => {
+            server.close();
+            server.listen(PORT, '0.0.0.0');
+          }, 2500); // Wait for OS to free the port
+        });
+      } else {
+        console.error('Server error:', e);
+      }
     });
+
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Closer-AI v5.0 Server running on port ${PORT}`);
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────────
   } catch (err) {
-    console.error('Failed to start server:', err.message);
+    console.error('Failed to start server:', err.stack || err);
     process.exit(1);
   }
 };
 
 startServer(); // Trigger clean restart
-// trigger restart
+
+// Graceful Shutdown Handlers
+const gracefulShutdown = () => {
+  console.log('Initiating graceful shutdown...');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+};
+
+process.once('SIGUSR2', () => {
+  server.close(() => {
+    process.kill(process.pid, 'SIGUSR2');
+  });
+});
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
+// Triggered clean restart to fix port lock
+// Reboot 3
+// Reboot 4
+// Reboot 5
+// Reboot 6
+// Reboot 7
+// Reboot 8
+// Reboot 9
+// Reboot 10

@@ -29,7 +29,7 @@ export default function SearchPage() {
   const [deepMode, setDeepMode] = useState(false);
   const inputRef = useRef(null);
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
   const headers = { Authorization: `Bearer ${token}` };
 
   // Rotate placeholders

@@ -25,7 +25,7 @@ export default function ProjectBuilderPage() {
   const [loading, setLoading] = useState({});
   const [results, setResults] = useState({});
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
   const call = async (endpoint, body, key) => {
     setLoading(l => ({ ...l, [key]: true }));
     try {

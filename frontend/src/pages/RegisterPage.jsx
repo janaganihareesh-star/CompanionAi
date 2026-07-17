@@ -148,13 +148,13 @@ export default function RegisterPage() {
         initial={{ opacity: 0, y: 30 }}
         animate={errorShake ? { x: [0, -8, 8, -8, 8, 0] } : { opacity: 1, y: 0 }}
         transition={errorShake ? { duration: 0.4 } : { type: 'spring', stiffness: 300, damping: 25 }}
-        className="w-full max-w-md mx-auto bg-surface/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_0_40px_rgba(167,139,250,0.15)] px-6 py-10 md:px-10 md:py-12 my-auto relative z-10 flex flex-col justify-center transform transition-all hover:shadow-[0_0_50px_rgba(167,139,250,0.25)]"
+        className="w-full max-w-[400px] mx-auto bg-surface/70 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-[0_0_40px_rgba(167,139,250,0.15)] px-6 py-8 md:px-8 md:py-10 my-auto relative z-10 flex flex-col justify-center transform transition-all hover:shadow-[0_0_50px_rgba(167,139,250,0.25)]"
       >
         {/* Title */}
         <div className="text-center space-y-2 mb-6">
           <div className="flex justify-center items-center gap-1.5 font-bold text-xl tracking-wide font-outfit text-text">
             <Sparkles className="w-6 h-6 text-accent" />
-            <span>MEGHA AI</span>
+            <span>CloserAI</span>
           </div>
           <h2 className="text-2xl font-bold font-outfit text-text">Create Account</h2>
           <p className="text-muted text-sm">Verify to unlock your emotional companion.</p>

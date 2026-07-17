@@ -2,10 +2,10 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Load stored authentication state
-const storedToken = localStorage.getItem('megha-token') || null;
+const storedToken = localStorage.getItem('closer-token') || null;
 let storedUser = null;
 try {
-  const parsed = localStorage.getItem('megha-user');
+  const parsed = localStorage.getItem('closer-user');
   if (parsed) storedUser = JSON.parse(parsed);
 } catch (e) {
   console.error('Error parsing stored user details:', e.message);
@@ -102,8 +102,8 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
-      localStorage.removeItem('megha-token');
-      localStorage.removeItem('megha-user');
+      localStorage.removeItem('closer-token');
+      localStorage.removeItem('closer-user');
     },
     clearAuthError(state) {
       state.error = null;
@@ -134,8 +134,8 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.token = action.payload.token;
         state.user = action.payload.user;
-        localStorage.setItem('megha-token', action.payload.token);
-        localStorage.setItem('megha-user', JSON.stringify(action.payload.user));
+        localStorage.setItem('closer-token', action.payload.token);
+        localStorage.setItem('closer-user', JSON.stringify(action.payload.user));
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.isLoading = false;
@@ -165,8 +165,8 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.token = action.payload.token;
         state.user = action.payload.user;
-        localStorage.setItem('megha-token', action.payload.token);
-        localStorage.setItem('megha-user', JSON.stringify(action.payload.user));
+        localStorage.setItem('closer-token', action.payload.token);
+        localStorage.setItem('closer-user', JSON.stringify(action.payload.user));
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -182,8 +182,8 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
-        localStorage.setItem('megha-token', action.payload.token);
-        localStorage.setItem('megha-user', JSON.stringify(action.payload.user));
+        localStorage.setItem('closer-token', action.payload.token);
+        localStorage.setItem('closer-user', JSON.stringify(action.payload.user));
       })
       .addCase(googleLoginAsync.rejected, (state, action) => {
         state.isLoading = false;

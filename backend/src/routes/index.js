@@ -1,0 +1,104 @@
+const express = require('express');
+const router = express.Router();
+
+// Import all route modules
+const authRoutes = require('./auth');
+const chatRoutes = require('./chat');
+const voiceRoutes = require('./voice');
+const memoryRoutes = require('./memory');
+const goalRoutes = require('./goals');
+const achievementRoutes = require('./achievements');
+const resumeRoutes = require('./resume');
+const interviewRoutes = require('./interview');
+const learningRoutes = require('./learning');
+const notificationRoutes = require('./notifications');
+const profileRoutes = require('./profile');
+const relationshipRoutes = require('./relationship');
+const moodRoutes = require('./mood');
+const dreamboardRoutes = require('./dreamboard');
+const datesRoutes = require('./dates');
+const weeklyReflectionRoutes = require('./weeklyReflection');
+const summaryRoutes = require('./summary');
+const settingsRoutes = require('./settings');
+const timelineRoutes = require('./timeline');
+const careerRoutes = require('./career');
+const projectRoutes = require('./project');
+const productivityRoutes = require('./productivity');
+const searchRoutes = require('./search');
+const pushRoutes = require('./push');
+const pluginRoutes = require('./pluginRoutes');
+const osRoutes = require('./osRoutes');
+const syncRoutes = require('./sync');
+const customAgentRoutes = require('./customAgentRoutes');
+const feedbackRoutes = require('./feedbackRoutes');
+const chronoRoutes = require('./chronoRoutes');
+const matrixRoutes = require('./matrixRoutes');
+
+// Engines 35-46
+const documentRoutes    = require('./document');
+const codeRoutes        = require('./code');
+const translateRoutes   = require('./translate');
+const promptsRoutes     = require('./prompts');
+const contentRoutes     = require('./content');
+const academicRoutes    = require('./academic');
+const calculateRoutes   = require('./calculate');
+const draftRoutes       = require('./draft');
+const businessRoutes    = require('./business');
+const ttsRoutes         = require('./tts');
+const hardwareRoutes    = require('./hardwareRoutes');
+const videoRoutes       = require('./videoRoutes');
+
+// Register routes
+router.use('/auth', authRoutes);
+router.use('/chat', chatRoutes);
+router.use('/voice', voiceRoutes);
+router.use('/memory', memoryRoutes);
+router.use('/goals', goalRoutes);
+router.use('/achievements', achievementRoutes);
+router.use('/resume', resumeRoutes);
+router.use('/interview', interviewRoutes);
+router.use('/learning', learningRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/profile', profileRoutes);
+router.use('/relationship', relationshipRoutes);
+router.use('/mood', moodRoutes);
+router.use('/dreamboard', dreamboardRoutes);
+router.use('/dates', datesRoutes);
+router.use('/weekly-reflection', weeklyReflectionRoutes);
+router.use('/summary', summaryRoutes);
+router.use('/settings', settingsRoutes);
+router.use('/timeline', timelineRoutes);
+router.use('/career', careerRoutes);
+router.use('/project', projectRoutes);
+router.use('/productivity', productivityRoutes);
+router.use('/search', searchRoutes);
+router.use('/push', pushRoutes);
+router.use('/plugins', pluginRoutes);
+router.use('/os', osRoutes);
+router.use('/sync', syncRoutes);
+router.use('/custom-agents', customAgentRoutes);
+router.use('/feedback', feedbackRoutes);
+router.use('/chrono-slip', chronoRoutes);
+router.use('/matrix', matrixRoutes);
+router.use('/akashic', require('./akashicRoutes'));
+router.use('/genesis', require('./genesisRoutes'));
+router.use('/gastronomy', require('./gastronomyRoutes'));
+router.use('/reactor', require('./reactorRoutes'));
+router.use('/soul', require('./soulRoutes'));
+router.use('/universe', require('./universeRoutes'));
+
+// Register Engine Routes
+router.use('/document',  documentRoutes);
+router.use('/code',      codeRoutes);
+router.use('/translate', translateRoutes);
+router.use('/prompts',   promptsRoutes);
+router.use('/content',   contentRoutes);
+router.use('/academic',  academicRoutes);
+router.use('/calculate', calculateRoutes);
+router.use('/draft',     draftRoutes);
+router.use('/business',  businessRoutes);
+router.use('/tts',       ttsRoutes);
+router.use('/hardware',  hardwareRoutes);
+router.use('/video',     videoRoutes);
+
+module.exports = router;

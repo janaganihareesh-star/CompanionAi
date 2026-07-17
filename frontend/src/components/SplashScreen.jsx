@@ -32,7 +32,7 @@ const SplashScreen = ({ onComplete }) => {
             <div className="relative flex items-center justify-center w-24 h-24 mb-6">
               <img 
                 src="/assets/logo.svg" 
-                alt="MEGHA AI" 
+                alt="CloserAI" 
                 className="relative z-10 w-24 h-24"
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -44,7 +44,7 @@ const SplashScreen = ({ onComplete }) => {
             </div>
             
             <h1 className="text-3xl font-bold text-white tracking-wider mb-2">
-              MEGHA AI
+              CloserAI
             </h1>
             <p className="text-violet-300 tracking-widest splash-tagline uppercase text-sm font-medium">
               Universal Intelligence OS

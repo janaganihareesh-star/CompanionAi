@@ -35,7 +35,7 @@ exports.uploadVoice = async (req, res, next) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: 'video',
-          folder: 'megha_voice_uploads',
+          folder: 'closer_voice_uploads',
           format: 'webm'
         },
         (error, result) => {
@@ -163,19 +163,12 @@ exports.sendVoice = async (req, res, next) => {
     }
 
     // 7. Convert text response to speech
-    const ttsUrl = await voiceService.textToSpeech(aiResponseText, promptData?.language || 'English');
+    const customVoiceId = promptData?.elevenLabsVoiceId || 'EXAVITQu4vr4xnSDxMaL';
+    const ttsUrl = await voiceService.textToSpeech(aiResponseText, promptData?.language || 'English', customVoiceId);
 
-    // 8. Upload TTS audio to Cloudinary
+    // 8. Skip Cloudinary upload to reduce latency, use Data URI directly
     let aiAudioUrl = ttsUrl;
-    try {
-      const uploadRes = await cloudinary.uploader.upload(ttsUrl, {
-        resource_type: 'video',
-        folder: 'megha_voice_replies'
-      });
-      aiAudioUrl = uploadRes.secure_url;
-    } catch (uploadErr) {
-      console.error('Cloudinary TTS upload failed, using source URL directly:', uploadErr.message);
-    }
+
 
     // 9. Save AI VoiceMessage
     const aiVoiceMsg = await VoiceMessage.create({

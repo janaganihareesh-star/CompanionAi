@@ -51,7 +51,7 @@ export default function DocumentGeneratorPage() {
     hobbies: ''
   });
 
-  const token = localStorage.getItem('megha-token');
+  const token = localStorage.getItem('closer-token');
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
