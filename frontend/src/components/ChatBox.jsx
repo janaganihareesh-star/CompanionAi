@@ -12,8 +12,14 @@ import { playPopSound, playChimeSound } from '../utils/soundUtils';
 import { extractTextFromFile } from '../utils/fileParser';
 import GoogleDrivePicker from './GoogleDrivePicker';
 
-function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifactOpen, onOpenSources }) {
+function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifactOpen, onOpenSources, messagesEndRef, isAtBottom }) {
   const [displayedText, setDisplayedText] = useState('');
+  
+  // Keep a ref of isAtBottom so the rAF loop always has the latest value
+  const isAtBottomRef = useRef(isAtBottom);
+  useEffect(() => {
+    isAtBottomRef.current = isAtBottom;
+  }, [isAtBottom]);
 
   useEffect(() => {
     let animationFrameId;
@@ -25,13 +31,19 @@ function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifact
         // Reveal 2-3 characters at a time for smooth but fast typing
         currentIndex = Math.min(currentIndex + 3, targetText.length);
         setDisplayedText(targetText.slice(0, currentIndex));
+        
+        // Auto-scroll as the text expands if we are near the bottom
+        if (isAtBottomRef.current && messagesEndRef?.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        }
+        
         animationFrameId = requestAnimationFrame(updateText);
       }
     };
 
     animationFrameId = requestAnimationFrame(updateText);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [streamingMessage]);
+  }, [streamingMessage, messagesEndRef]);
 
   return (
     <MessageBubble 
@@ -463,6 +475,8 @@ const ChatBox = React.memo(function ChatBox({
             onArtifactOpen={onArtifactOpen}
             onCanvasArtifactOpen={onCanvasArtifactOpen}
             onOpenSources={onOpenSources}
+            messagesEndRef={messagesEndRef}
+            isAtBottom={isAtBottom}
           />
         )}
         
