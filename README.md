@@ -1,5 +1,5 @@
 <h1 align="center">
-  ✨ Companion AI ✨
+  ✨ CloserAI ✨
 </h1>
 
 <p align="center">
@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-  Companion AI is a next-generation intelligent platform that combines conversational AI, real-time coding sandboxes, voice interaction, document intelligence, desktop automation, productivity tools, and long-term AI memory into one seamless and dynamic web experience.
+  CloserAI is a next-generation intelligent platform that combines conversational AI, real-time coding sandboxes, voice interaction, document intelligence, desktop automation, productivity tools, and long-term AI memory into one seamless and dynamic web experience.
 </p>
 
 <p align="center">
-  <a href="https://companion-ai.vercel.app"><b>🌐 Live Demo</b></a> •
+  <a href="https://closerai.vercel.app"><b>🌐 Live Demo</b></a> •
   <a href="#-tech-stack"><b>🛠 Tech Stack</b></a> •
   <a href="#-core-features"><b>⚡ Core Features</b></a> •
   <a href="#-installation--setup"><b>🚀 Installation</b></a>
@@ -21,13 +21,13 @@
 
 ## 📖 About The Project
 
-Companion AI was built with the vision of creating an all-in-one personalized assistant that goes beyond simple chat. It remembers your preferences, executes code for you, analyzes your documents, helps you prepare for interviews, and automates your workflows. It leverages cutting-edge LLMs (via Groq and OpenRouter), alongside local execution environments to provide unprecedented speed and utility.
+CloserAI was built with the vision of creating an all-in-one personalized assistant that goes beyond simple chat. It remembers your preferences, executes code for you, analyzes your documents, helps you prepare for interviews, and automates your workflows. It leverages cutting-edge LLMs (via Groq and OpenRouter), alongside local execution environments to provide unprecedented speed and utility.
 
 ---
 
 ## ⚡ Core Features
 
-Companion AI is packed with an ecosystem of powerful engines designed to boost your daily productivity:
+CloserAI is packed with an ecosystem of powerful engines designed to boost your daily productivity:
 
 ### 🤖 Intelligent AI Chat & Memory
 - **Context-Aware Conversations:** Chat with a highly intelligent AI that understands context.
@@ -45,7 +45,7 @@ Companion AI is packed with an ecosystem of powerful engines designed to boost y
 - **Document Generator:** Automatically generate official drafts, emails, and reports.
 
 ### 🎤 Voice & Desktop Integration
-- **Voice Assistant:** Communicate with Companion AI completely hands-free using advanced Speech-to-Text and Text-to-Speech capabilities.
+- **Voice Assistant:** Communicate with CloserAI completely hands-free using advanced Speech-to-Text and Text-to-Speech capabilities.
 - **Desktop Automation:** Trigger local PC automations, file management, and terminal commands via natural language (when running the local desktop client).
 
 ### 🎓 Learning & Career Hub
@@ -57,7 +57,7 @@ Companion AI is packed with an ecosystem of powerful engines designed to boost y
 
 ## 🛠 Tech Stack
 
-Companion AI is built using a modern, scalable, and highly performant full-stack architecture.
+CloserAI is built using a modern, scalable, and highly performant full-stack architecture.
 
 ### Frontend
 - **React 19 & Vite:** Blazing fast UI rendering and development experience.
@@ -84,7 +84,7 @@ Companion AI is built using a modern, scalable, and highly performant full-stack
 
 ## 🚀 Installation & Setup
 
-Want to run Companion AI locally? Follow these steps!
+Want to run CloserAI locally? Follow these steps!
 
 ### Prerequisites
 - Node.js (v18+)
@@ -93,8 +93,8 @@ Want to run Companion AI locally? Follow these steps!
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/janaganihareesh-star/Companion AI.git
-cd Companion AI
+git clone https://github.com/janaganihareesh-star/CloserAI.git
+cd CloserAI
 ```
 
 ### 2. Install Dependencies
