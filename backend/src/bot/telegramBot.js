@@ -52,7 +52,7 @@ const setupTelegramBot = () => {
     console.log('🚀 [TelegramBot] CloserAI Bot is online and listening.');
   }).catch(e => {
     if (e.message.includes('409')) {
-      console.warn('⚠️ [TelegramBot] Port/Webhook conflict detected. Another instance is likely running. Skipping Telegram bot for this dev cycle.');
+      // console.warn('⚠️ [TelegramBot] Port/Webhook conflict detected. Another instance is likely running. Skipping Telegram bot for this dev cycle.');
     } else {
       console.error('🚀 [TelegramBot] Failed to launch:', e.message);
     }
