@@ -21,10 +21,17 @@ if ('serviceWorker' in navigator) {
 // Provide a robust fallback if VITE_API_URL is missing
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://closerai-qcj3.onrender.com';
 axios.defaults.withCredentials = true;
+axios.defaults.timeout = 30000; // 30 seconds timeout to prevent infinite spinning if backend is asleep
 
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return Promise.reject(new Error('The server is taking too long to respond (it might be waking up). Please try again.'));
+    }
+    if (!error.response && error.message === 'Network Error') {
+      return Promise.reject(new Error('Network error. Please check your connection or server status.'));
+    }
     if (error.response && error.response.status === 401) {
       // Clear token and redirect to login if unauthorized
       localStorage.removeItem('closer-token');
