@@ -87,7 +87,8 @@ app.use(generalLimiter);
 app.use('/api', apiRoutes);
 
 app.get('/', (req, res) => {
-  res.send('<h2>CloserAI Backend API is running successfully.</h2><p>Please use the frontend URL (e.g., http://localhost:5173/) to access the application interface.</p>');
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173/';
+  res.send(`<h2>CloserAI Backend API is running successfully.</h2><p>Please use the frontend URL (e.g., <a href="${frontendUrl}">${frontendUrl}</a>) to access the application interface.</p>`);
 });
 
 app.get('/health', (req, res) => {
