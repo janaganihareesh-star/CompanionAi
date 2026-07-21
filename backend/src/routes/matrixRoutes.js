@@ -75,7 +75,7 @@ Uptime: ${(os.uptime() / 3600).toFixed(2)} Hours`;
                 
             case 'OPEN_URL':
                 try {
-                    await execPromise(`start "" "${parsed.url}"`);
+                    await execPromise(`start "" "${parsed.url}"`, { shell: 'cmd.exe' });
                     output = `SUCCESS: Uplink established to '${parsed.url}'.`;
                 } catch (e) {
                     output = `ERROR: Failed to route to '${parsed.url}'. ${e.message.substring(0, 50)}`;
@@ -85,7 +85,7 @@ Uptime: ${(os.uptime() / 3600).toFixed(2)} Hours`;
             case 'SEARCH_WEB':
                 try {
                     const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(parsed.query)}`;
-                    await execPromise(`start "" "${searchUrl}"`);
+                    await execPromise(`start "" "${searchUrl}"`, { shell: 'cmd.exe' });
                     output = `SUCCESS: Querying global network for '${parsed.query}'.`;
                 } catch (e) {
                     output = `ERROR: Search uplink failed. ${e.message.substring(0, 50)}`;
@@ -96,7 +96,7 @@ Uptime: ${(os.uptime() / 3600).toFixed(2)} Hours`;
                 // Safe execution on Windows
                 // Using 'start' to open applications by name
                 try {
-                    await execPromise(`start "" "${parsed.appName}"`);
+                    await execPromise(`start "" "${parsed.appName}"`, { shell: 'cmd.exe' });
                     output = `SUCCESS: Initialized launch sequence for '${parsed.appName}'.`;
                 } catch (e) {
                     output = `ERROR: Failed to launch '${parsed.appName}'. ${e.message.substring(0, 50)}`;
