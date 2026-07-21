@@ -175,37 +175,40 @@ exports.executeCode = async (req, res) => {
             if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
 
             if (nativeErr && nativeErr.code === 127) {
-              console.warn(`[Code Engine] Native execution failed. Falling back to Paiza API for ${canonicalLang}...`);
+              console.warn(`[Code Engine] Native execution failed. Falling back to OneCompiler API for ${canonicalLang}...`);
               try {
-                const paizaLangMap = {
-                  'javascript': 'javascript', 'python': 'python3', 'java': 'java', 'c++': 'cpp', 'cpp': 'cpp', 'c': 'c', 'go': 'go'
+                const ocLangMap = {
+                  'javascript': 'nodejs', 'python': 'python', 'java': 'java', 'c++': 'cpp', 'cpp': 'cpp', 'c': 'c', 'go': 'go'
                 };
-                const paizaLang = paizaLangMap[canonicalLang];
-                if (!paizaLang) return res.status(503).json({ error: `Language ${canonicalLang} is not supported by external fallback.` });
+                const ocLang = ocLangMap[canonicalLang];
+                if (!ocLang) return res.status(503).json({ error: `Language ${canonicalLang} is not supported by external fallback.` });
                 
-                const createRes = await axios.post('https://api.paiza.io/runners/create', {
-                  source_code: code,
-                  language: paizaLang,
-                  api_key: 'guest'
+                let fileName = 'main';
+                if (canonicalLang === 'java') {
+                   const match = code.match(/(?:public\s+)?class\s+([a-zA-Z0-9_]+)/);
+                   fileName = match ? match[1] + '.java' : 'Main.java';
+                } else if (canonicalLang === 'python') fileName = 'main.py';
+                else if (canonicalLang === 'cpp' || canonicalLang === 'c++') fileName = 'main.cpp';
+                else if (canonicalLang === 'c') fileName = 'main.c';
+                else if (canonicalLang === 'go') fileName = 'main.go';
+                else fileName = 'main.js';
+
+                const response = await axios.post('https://onecompiler.com/api/code/exec', {
+                  properties: {
+                    language: ocLang,
+                    files: [{ name: fileName, content: code }]
+                  }
                 });
                 
-                const jobId = createRes.data.id;
-                let attempts = 0;
-                while (attempts < 15) {
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  const detailsRes = await axios.get(`https://api.paiza.io/runners/get_details?id=${jobId}&api_key=guest`);
-                  const details = detailsRes.data;
-                  if (details.status === 'completed') {
-                    return res.json({
-                      stdout: details.stdout || '',
-                      stderr: details.stderr || details.build_stderr || '',
-                      code: (details.exit_code === '0' || details.exit_code === 0) && (details.build_exit_code === '0' || details.build_exit_code === 0 || details.build_exit_code === null) ? 0 : 1,
-                      signal: null
-                    });
-                  }
-                  attempts++;
+                const data = response.data;
+                if (data) {
+                  return res.json({
+                    stdout: data.stdout || '',
+                    stderr: data.stderr || data.exception || '',
+                    code: data.exception || data.stderr ? 1 : 0,
+                    signal: null
+                  });
                 }
-                return res.status(504).json({ error: 'External API execution timed out.' });
               } catch (apiErr) {
                 console.error('API fallback failed:', apiErr.message);
                 return res.status(503).json({ error: 'All execution environments (Docker, Native, API) failed.' });
