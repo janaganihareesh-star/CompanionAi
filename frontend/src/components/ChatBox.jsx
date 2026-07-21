@@ -12,6 +12,40 @@ import { playPopSound, playChimeSound } from '../utils/soundUtils';
 import { extractTextFromFile } from '../utils/fileParser';
 import GoogleDrivePicker from './GoogleDrivePicker';
 
+function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifactOpen, onOpenSources }) {
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    let animationFrameId;
+    let currentIndex = displayedText.length;
+    const targetText = streamingMessage || '';
+
+    const updateText = () => {
+      if (currentIndex < targetText.length) {
+        // Reveal 2-3 characters at a time for smooth but fast typing
+        currentIndex = Math.min(currentIndex + 3, targetText.length);
+        setDisplayedText(targetText.slice(0, currentIndex));
+        animationFrameId = requestAnimationFrame(updateText);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(updateText);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [streamingMessage]);
+
+  return (
+    <MessageBubble 
+      key="streaming-temp" 
+      message={{ _id: 'streaming-temp', sender: 'ai', content: displayedText + '█', mood: 'neutral' }} 
+      onArtifactOpen={onArtifactOpen} 
+      onCanvasArtifactOpen={onCanvasArtifactOpen}
+      onOpenCanvas={onArtifactOpen} 
+      onOpenSources={onOpenSources} 
+    />
+  );
+}
+
+
 const ChatBox = React.memo(function ChatBox({
   inputText,
   setInputText,
@@ -86,22 +120,32 @@ const ChatBox = React.memo(function ChatBox({
 
   // Robust Auto-Scroll Mechanism
   useEffect(() => {
-    // Only auto-scroll if the user is already at the bottom
-    if (isAtBottom && messagesEndRef && messagesEndRef.current) {
+    // If we are sending a message, or streaming, or at the bottom, auto-scroll.
+    if ((isAtBottom || isSending) && messagesEndRef?.current) {
       // Use requestAnimationFrame to ensure DOM has painted the latest messages/bubbles
       requestAnimationFrame(() => {
         messagesEndRef.current.scrollIntoView({
-          behavior: streamingMessage ? 'auto' : 'smooth',
+          behavior: 'auto', // use auto for instant sticking to bottom during stream to avoid queue lag
           block: 'end'
         });
       });
     }
-  }, [messages, isSending, streamingMessage, messagesEndRef, isAtBottom]);
+  }, [messages, isSending, streamingMessage, messagesEndRef]);
+
+  // Force scroll to bottom when a new conversation loads
+  useEffect(() => {
+    if (messagesEndRef?.current) {
+      setTimeout(() => {
+        messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        setIsAtBottom(true);
+      }, 100);
+    }
+  }, [currentConversation?._id]);
 
   useEffect(() => {
     if (window.visualViewport) {
       const handleResize = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
       };
       window.visualViewport.addEventListener('resize', handleResize);
       return () => window.visualViewport.removeEventListener('resize', handleResize);
@@ -414,13 +458,11 @@ const ChatBox = React.memo(function ChatBox({
         
         {/* Render Streaming Message if exists */}
         {isSending && streamingMessage && (
-          <MessageBubble 
-            key="streaming-temp" 
-            message={{ _id: 'streaming-temp', sender: 'ai', content: streamingMessage + '█', mood: 'neutral' }} 
-            onArtifactOpen={onArtifactOpen} 
+          <SmoothStreamBubble 
+            streamingMessage={streamingMessage}
+            onArtifactOpen={onArtifactOpen}
             onCanvasArtifactOpen={onCanvasArtifactOpen}
-            onOpenCanvas={onArtifactOpen} 
-            onOpenSources={onOpenSources} 
+            onOpenSources={onOpenSources}
           />
         )}
         
