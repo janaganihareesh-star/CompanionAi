@@ -310,7 +310,7 @@ export default function ProfilePage() {
                       title: 'First Encounter',
                       status: 'Completed',
                       statusStyle: 'bg-panel border border-border text-muted',
-                      desc: 'Companion AI Companion initialized. A new journey begins.'
+                      desc: 'CloserAI Companion initialized. A new journey begins.'
                     });
 
                     // 2. Chat volume

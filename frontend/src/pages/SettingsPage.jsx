@@ -322,7 +322,7 @@ export default function SettingsPage() {
                   <label className="text-base font-bold text-text font-outfit flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-accent" /> Companion Vibe & Persona
                   </label>
-                  <p className="text-xs text-muted">Choose how Companion AI should emotionally connect with you.</p>
+                  <p className="text-xs text-muted">Choose how CloserAI should emotionally connect with you.</p>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -489,7 +489,7 @@ export default function SettingsPage() {
                 <ShieldAlert className="w-6 h-6 text-rose" />
                 <div>
                   <h3 className="text-lg font-bold font-outfit text-text">Data Privacy & Account</h3>
-                  <p className="text-muted text-[10px]">Export or permanently delete all your personal data stored in Companion AI, \${userName}.</p>
+                  <p className="text-muted text-[10px]">Export or permanently delete all your personal data stored in CloserAI, \${userName}.</p>
                 </div>
               </div>
 
@@ -515,7 +515,7 @@ export default function SettingsPage() {
                 <div className="p-4 bg-rose/5 border border-rose/20 rounded-xl space-y-2">
                   <span className="text-xs font-bold text-rose block">⚠️ Delete My Account</span>
                   <p className="text-[10px] text-muted leading-relaxed">
-                    Permanently erase all your data from Companion AI. This cannot be reversed, \${userName}.
+                    Permanently erase all your data from CloserAI. This cannot be reversed, \${userName}.
                   </p>
                   <button
                     type="button"

@@ -57,7 +57,7 @@ export default function LiveCameraModal({ isOpen, onClose, onAnalyze }) {
       return;
     }
     setIsStreaming(true);
-    setStreamObservations(['[System] Connected to Companion AI Vision Core...']);
+    setStreamObservations(['[System] Connected to CloserAI Vision Core...']);
     
     // Capture and emit frame every 2 seconds
     streamIntervalRef.current = setInterval(() => {
@@ -185,7 +185,7 @@ export default function LiveCameraModal({ isOpen, onClose, onAnalyze }) {
                 ) : (
                   <div className="text-sm text-muted text-center mt-10">
                     <Radio className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    Start the Continuous Stream to allow Companion AI to monitor your camera in real-time.
+                    Start the Continuous Stream to allow CloserAI to monitor your camera in real-time.
                   </div>
                 )}
               </div>

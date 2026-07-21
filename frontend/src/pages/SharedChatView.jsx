@@ -53,7 +53,7 @@ export default function SharedChatView() {
       <div className="sticky top-0 z-50 glass-panel border-b border-border/30 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">{conversation.title || 'Shared Conversation'}</h1>
-          <p className="text-xs text-muted mt-1">Shared via Companion AI</p>
+          <p className="text-xs text-muted mt-1">Shared via CloserAI</p>
         </div>
       </div>
       

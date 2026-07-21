@@ -10,7 +10,7 @@ const setupTelegramBot = () => {
   const bot = new Telegraf(token);
 
   bot.start((ctx) => {
-    ctx.reply('Welcome to Companion AI on Telegram! Send me a message and I will reply using the core brain.');
+    ctx.reply('Welcome to CloserAI on Telegram! Send me a message and I will reply using the core brain.');
   });
 
   bot.on('text', async (ctx) => {
@@ -49,7 +49,7 @@ const setupTelegramBot = () => {
 
   console.log('[TelegramBot] Launching bot...');
   bot.launch({ dropPendingUpdates: true }).then(() => {
-    console.log('🚀 [TelegramBot] Companion AI Bot is online and listening.');
+    console.log('🚀 [TelegramBot] CloserAI Bot is online and listening.');
   }).catch(e => {
     if (e.message.includes('409')) {
       // console.warn('⚠️ [TelegramBot] Port/Webhook conflict detected. Another instance is likely running. Skipping Telegram bot for this dev cycle.');

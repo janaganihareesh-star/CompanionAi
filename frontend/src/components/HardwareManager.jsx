@@ -5,10 +5,10 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 const HARDWARE_MODELS = [
-  { id: 'pocket_ai', name: 'Companion AI Pocket Companion', type: 'smart_companion', icon: Smartphone, desc: 'A dedicated pocket AI device with voice interface.' },
-  { id: 'vision_glasses', name: 'Companion AI Vision Glasses', type: 'smart_glasses', icon: Glasses, desc: 'AR glasses with real-time world recognition.' },
-  { id: 'home_hub', name: 'Companion AI Home Speaker', type: 'smart_speaker', icon: Speaker, desc: 'Voice-controlled smart home speaker.' },
-  { id: 'neural_watch', name: 'Companion AI Neural Watch', type: 'smart_watch', icon: Watch, desc: 'Wrist-worn AI assistant for quick tasks.' },
+  { id: 'pocket_ai', name: 'CloserAI Pocket Companion', type: 'smart_companion', icon: Smartphone, desc: 'A dedicated pocket AI device with voice interface.' },
+  { id: 'vision_glasses', name: 'CloserAI Vision Glasses', type: 'smart_glasses', icon: Glasses, desc: 'AR glasses with real-time world recognition.' },
+  { id: 'home_hub', name: 'CloserAI Home Speaker', type: 'smart_speaker', icon: Speaker, desc: 'Voice-controlled smart home speaker.' },
+  { id: 'neural_watch', name: 'CloserAI Neural Watch', type: 'smart_watch', icon: Watch, desc: 'Wrist-worn AI assistant for quick tasks.' },
 ];
 
 export default function HardwareManager() {
@@ -82,7 +82,7 @@ export default function HardwareManager() {
             <Cpu className="text-accent w-6 h-6" />
             Hardware Hub
           </h3>
-          <p className="text-sm text-muted">Manage your physical Companion AI companion devices.</p>
+          <p className="text-sm text-muted">Manage your physical CloserAI companion devices.</p>
         </div>
         <button 
           type="button"
@@ -100,7 +100,7 @@ export default function HardwareManager() {
           <div className="col-span-full bg-surface border border-white/5 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
             <Cpu className="w-12 h-12 text-muted mb-4 opacity-50" />
             <h4 className="text-lg font-bold text-gray-300">No Devices Paired</h4>
-            <p className="text-sm text-gray-500 max-w-sm mt-2">Pair a physical smart companion device to access Companion AI natively.</p>
+            <p className="text-sm text-gray-500 max-w-sm mt-2">Pair a physical smart companion device to access CloserAI natively.</p>
           </div>
         ) : (
           devices.map(device => (
@@ -164,7 +164,7 @@ export default function HardwareManager() {
               </button>
               
               <h2 className="text-xl font-bold font-outfit mb-2 text-white">Select Device to Pair</h2>
-              <p className="text-sm text-muted mb-6">Choose the physical hardware model you want to connect to Companion AI.</p>
+              <p className="text-sm text-muted mb-6">Choose the physical hardware model you want to connect to CloserAI.</p>
               
               <div className="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
                 {HARDWARE_MODELS.map(model => (

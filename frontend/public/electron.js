@@ -9,7 +9,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    title: "Companion AI - Desktop OS",
+    title: "CloserAI - Desktop OS",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false

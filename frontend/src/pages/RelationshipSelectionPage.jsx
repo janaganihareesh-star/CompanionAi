@@ -82,7 +82,7 @@ export default function RelationshipSelectionPage() {
               <span>Step 3 • Vibe & Persona</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black font-outfit text-transparent bg-clip-text bg-gradient-to-r from-text via-text to-muted tracking-tight">Companion Vibe & Persona</h2>
-            <p className="text-muted text-sm md:text-base max-w-lg mx-auto font-medium">Choose how Companion AI should emotionally connect with you.</p>
+            <p className="text-muted text-sm md:text-base max-w-lg mx-auto font-medium">Choose how CloserAI should emotionally connect with you.</p>
           </div>
 
           {/* Cards Grid */}

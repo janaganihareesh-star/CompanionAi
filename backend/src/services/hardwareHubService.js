@@ -9,7 +9,7 @@ class HardwareHubService extends EventEmitter {
   registerDevice(deviceId, deviceInfo) {
     const device = {
       id: deviceId,
-      name: deviceInfo.name || 'Companion AI Companion Device',
+      name: deviceInfo.name || 'CloserAI Companion Device',
       type: deviceInfo.type || 'rabbit_r1_equivalent',
       batteryLevel: deviceInfo.batteryLevel || 100,
       status: 'online',
@@ -56,7 +56,7 @@ class HardwareHubService extends EventEmitter {
     // For now, we mock the pipeline.
     
     return {
-      text: "I am your Companion AI companion. I received your voice input.",
+      text: "I am your CloserAI companion. I received your voice input.",
       audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
       action: null
     };

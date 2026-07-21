@@ -31,7 +31,7 @@ class GlobalErrorBoundary extends React.Component {
             </div>
             <h1 className="text-2xl font-bold mb-2">System Recovery</h1>
             <p className="text-muted mb-6 text-sm leading-relaxed">
-              Companion AI encountered an unexpected memory anomaly. The cognitive core has safely paused to prevent data corruption.
+              CloserAI encountered an unexpected memory anomaly. The cognitive core has safely paused to prevent data corruption.
             </p>
             <button 
               onClick={this.handleRestart}

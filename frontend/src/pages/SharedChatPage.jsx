@@ -46,7 +46,7 @@ export default function SharedChatPage() {
         <h2 className="text-xl font-bold mb-2">Chat Not Found</h2>
         <p className="text-muted text-center max-w-sm mb-6">{error}</p>
         <button onClick={() => navigate('/landing')} className="px-6 py-2 bg-accent text-white rounded-full font-semibold hover:bg-accent/90 transition">
-          Go to Companion AI
+          Go to CloserAI
         </button>
       </div>
     );
@@ -70,7 +70,7 @@ export default function SharedChatPage() {
             Public Link
           </div>
           <button onClick={() => navigate('/landing')} className="text-accent text-sm font-semibold hover:underline">
-            Get Companion AI
+            Get CloserAI
           </button>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function SharedChatPage() {
         ))}
         
         <div className="py-8 text-center text-xs text-muted border-t border-border/30 mt-8">
-          Powered by Companion AI · ChatGPT Clone Architecture
+          Powered by CloserAI · ChatGPT Clone Architecture
         </div>
       </div>
     </div>

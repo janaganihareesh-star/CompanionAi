@@ -74,9 +74,9 @@ export default function Sidebar() {
             <div className="flex items-center gap-3 font-bold text-2xl tracking-wide font-outfit">
               <div className="relative">
                 <div className="absolute inset-0 bg-accent blur-md opacity-40 rounded-full animate-pulse"></div>
-                <img src="/logo.png" alt="Companion AI Logo" className="relative w-9 h-9 object-contain rounded-full ring-2 ring-accent/60" />
+                <img src="/logo.png" alt="CloserAI Logo" className="relative w-9 h-9 object-contain rounded-full ring-2 ring-accent/60" />
               </div>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Companion AI</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">CloserAI</span>
             </div>
             <button className="md:hidden p-1.5 text-muted hover:text-white bg-white/5 rounded-lg transition" onClick={() => setIsMobileOpen(false)}>
               <X className="w-5 h-5" />

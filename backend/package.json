@@ -1,7 +1,7 @@
 {
   "name": "closer-ai-backend",
   "version": "1.0.0",
-  "description": "Companion AI companion MERN backend",
+  "description": "CloserAI companion MERN backend",
   "main": "src/server.js",
   "scripts": {
     "start": "node scripts/auto-backup.js && node src/server.js",

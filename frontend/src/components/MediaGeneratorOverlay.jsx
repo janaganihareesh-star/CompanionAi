@@ -108,7 +108,7 @@ const MediaGeneratorOverlay = ({ isOpen, onClose }) => {
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gray-900/80">
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            ✨ Companion AI Media Studio
+                            ✨ CloserAI Media Studio
                         </h2>
                         <button onClick={onClose} className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors">
                             <FiX size={24} />

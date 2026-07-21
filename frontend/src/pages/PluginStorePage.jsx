@@ -199,7 +199,7 @@ export default function PluginStorePage() {
 
             <div className="mt-12 bg-surface border border-white/10 p-8 rounded-2xl">
               <h3 className="text-2xl font-bold text-white mb-2">Create Custom Plugin</h3>
-              <p className="text-gray-400 text-sm mb-6">Build your own open plugins like ChatGPT GPTs by providing a webhook endpoint. Companion AI will dynamically call this endpoint when requested.</p>
+              <p className="text-gray-400 text-sm mb-6">Build your own open plugins like ChatGPT GPTs by providing a webhook endpoint. CloserAI will dynamically call this endpoint when requested.</p>
               
               <div className="space-y-4 max-w-2xl">
                 <div>
@@ -212,7 +212,7 @@ export default function PluginStorePage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-300">Description / Instructions</label>
-                  <textarea placeholder="Tell Companion AI when to use this plugin..." className="w-full bg-[#171717] border border-white/10 rounded-xl px-4 py-3 mt-1 text-white focus:border-accent outline-none h-24"></textarea>
+                  <textarea placeholder="Tell CloserAI when to use this plugin..." className="w-full bg-[#171717] border border-white/10 rounded-xl px-4 py-3 mt-1 text-white focus:border-accent outline-none h-24"></textarea>
                 </div>
                 <button className="px-6 py-3 bg-accent text-white rounded-xl font-bold hover:opacity-90 transition w-full md:w-auto">
                   + Create Webhook Plugin

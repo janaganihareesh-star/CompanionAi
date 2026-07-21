@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,ttf,woff,woff2}'] // Aggressive Offline Caching
       },
       manifest: {
-        name: 'Companion AI',
-        short_name: 'Companion AI',
+        name: 'CloserAI',
+        short_name: 'CloserAI',
         description: 'Advanced AI Assistant',
         theme_color: '#7C3AED',
         background_color: '#0F0F1A',

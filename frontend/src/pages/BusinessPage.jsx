@@ -192,7 +192,7 @@ export default function BusinessPage() {
               <>
                 <div className="bus-field-group">
                   <label>Business / Brand Name</label>
-                  <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="e.g. Companion AI" />
+                  <input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="e.g. CloserAI" />
                 </div>
                 <div className="bus-field-group">
                   <label>Product / Service description</label>

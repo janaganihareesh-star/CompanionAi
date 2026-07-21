@@ -56,7 +56,7 @@ export default function ChatPage() {
   const pref = useSelector((state) => state.settings.preferences);
   const minimalMode = useSelector((state) => state.settings.minimalMode);
   const emergencyMode = useSelector((state) => state.chat.emergencyMode);
-  const companionName = pref?.aiName || 'Companion AI';
+  const companionName = pref?.aiName || 'CloserAI';
 
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');

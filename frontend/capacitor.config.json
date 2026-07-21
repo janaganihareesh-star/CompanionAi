@@ -1,6 +1,6 @@
 {
   "appId": "com.closer.ai",
-  "appName": "Companion AI",
+  "appName": "CloserAI",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "plugins": {
