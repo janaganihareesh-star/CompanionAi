@@ -175,24 +175,39 @@ exports.executeCode = async (req, res) => {
             if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
 
             if (nativeErr && nativeErr.code === 127) {
-              console.warn(`[Code Engine] Native execution failed. Falling back to Piston API for ${canonicalLang}...`);
+              console.warn(`[Code Engine] Native execution failed. Falling back to Paiza API for ${canonicalLang}...`);
               try {
-                const response = await axios.post('https://emkc.org/api/v2/piston/execute', {
-                  language: canonicalLang === 'cpp' ? 'c++' : canonicalLang,
-                  version: '*',
-                  files: [{ content: code }]
+                const paizaLangMap = {
+                  'javascript': 'javascript', 'python': 'python3', 'java': 'java', 'c++': 'cpp', 'cpp': 'cpp', 'c': 'c', 'go': 'go'
+                };
+                const paizaLang = paizaLangMap[canonicalLang];
+                if (!paizaLang) return res.status(503).json({ error: `Language ${canonicalLang} is not supported by external fallback.` });
+                
+                const createRes = await axios.post('https://api.paiza.io/runners/create', {
+                  source_code: code,
+                  language: paizaLang,
+                  api_key: 'guest'
                 });
                 
-                if (response.data && response.data.run) {
-                  return res.json({
-                    stdout: response.data.run.stdout || '',
-                    stderr: response.data.run.stderr || '',
-                    code: response.data.run.code || 0,
-                    signal: response.data.run.signal || null
-                  });
+                const jobId = createRes.data.id;
+                let attempts = 0;
+                while (attempts < 15) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  const detailsRes = await axios.get(`https://api.paiza.io/runners/get_details?id=${jobId}&api_key=guest`);
+                  const details = detailsRes.data;
+                  if (details.status === 'completed') {
+                    return res.json({
+                      stdout: details.stdout || '',
+                      stderr: details.stderr || details.build_stderr || '',
+                      code: (details.exit_code === '0' || details.exit_code === 0) && (details.build_exit_code === '0' || details.build_exit_code === 0 || details.build_exit_code === null) ? 0 : 1,
+                      signal: null
+                    });
+                  }
+                  attempts++;
                 }
-              } catch (pistonErr) {
-                console.error('Piston fallback failed:', pistonErr.message);
+                return res.status(504).json({ error: 'External API execution timed out.' });
+              } catch (apiErr) {
+                console.error('API fallback failed:', apiErr.message);
                 return res.status(503).json({ error: 'All execution environments (Docker, Native, API) failed.' });
               }
             }
