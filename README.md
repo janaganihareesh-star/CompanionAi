@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://megha-ai.vercel.app"><b>🌐 Live Demo</b></a> •
+  <a href="https://companion-ai.vercel.app"><b>🌐 Live Demo</b></a> •
   <a href="#-tech-stack"><b>🛠 Tech Stack</b></a> •
   <a href="#-core-features"><b>⚡ Core Features</b></a> •
   <a href="#-installation--setup"><b>🚀 Installation</b></a>
@@ -93,8 +93,8 @@ Want to run Companion AI locally? Follow these steps!
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/janaganihareesh-star/MEGHA-AI.git
-cd MEGHA-AI
+git clone https://github.com/janaganihareesh-star/Companion AI.git
+cd Companion AI
 ```
 
 ### 2. Install Dependencies
