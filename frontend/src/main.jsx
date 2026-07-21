@@ -7,6 +7,7 @@ import App from './App.jsx';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import './index.css';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
