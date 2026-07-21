@@ -91,6 +91,7 @@ const fs = require('fs').promises;
 const pathNode = require('path');
 const { exec } = require('child_process');
 const crypto = require('crypto');
+const axios = require('axios');
 
 const languageMap = {
   'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
@@ -170,8 +171,32 @@ exports.executeCode = async (req, res) => {
         }
 
         if (nativeCommand) {
-          return exec(nativeCommand, { timeout: 10000, cwd: tempDir }, (nativeErr, nativeStdout, nativeStderr) => {
+          return exec(nativeCommand, { timeout: 10000, cwd: tempDir }, async (nativeErr, nativeStdout, nativeStderr) => {
             if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(console.error);
+
+            if (nativeErr && nativeErr.code === 127) {
+              console.warn(`[Code Engine] Native execution failed. Falling back to Piston API for ${canonicalLang}...`);
+              try {
+                const response = await axios.post('https://emkc.org/api/v2/piston/execute', {
+                  language: canonicalLang === 'cpp' ? 'c++' : canonicalLang,
+                  version: '*',
+                  files: [{ content: code }]
+                });
+                
+                if (response.data && response.data.run) {
+                  return res.json({
+                    stdout: response.data.run.stdout || '',
+                    stderr: response.data.run.stderr || '',
+                    code: response.data.run.code || 0,
+                    signal: response.data.run.signal || null
+                  });
+                }
+              } catch (pistonErr) {
+                console.error('Piston fallback failed:', pistonErr.message);
+                return res.status(503).json({ error: 'All execution environments (Docker, Native, API) failed.' });
+              }
+            }
+
             if (nativeErr && nativeErr.killed) {
               return res.json({ stdout: nativeStdout || '', stderr: 'Execution Timed Out (10s)', code: 1, signal: 'SIGTERM' });
             }
