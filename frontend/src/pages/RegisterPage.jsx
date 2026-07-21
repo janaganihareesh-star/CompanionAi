@@ -78,7 +78,7 @@ export default function RegisterPage() {
         password
       });
 
-      toast.success(res.message || 'OTP sent successfully!');
+      toast.success(res.message || 'OTP sent successfully!', { id: 'auth-success' });
       setTimeout(() => {
         navigate('/verify-otp', { state: { userId: res.userId } });
       }, 1500);
@@ -93,7 +93,7 @@ export default function RegisterPage() {
     setFormError('');
     try {
       const res = await dispatch(googleLoginAsync(credentialResponse.credential)).unwrap();
-      toast.success('Google Registration successful! Connecting companion...');
+      toast.success('Google Registration successful! Connecting companion...', { id: 'auth-success' });
       
       setTimeout(() => {
         axios.get('/api/profile/preferences', {

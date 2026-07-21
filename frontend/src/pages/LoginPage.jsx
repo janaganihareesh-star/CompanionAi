@@ -46,7 +46,7 @@ export default function LoginPage() {
 
     try {
       const res = await login({ email, password });
-      toast.success('Login successful! Connecting companion...');
+      toast.success('Login successful! Connecting companion...', { id: 'auth-success' });
       
       // On success: trigger scale 1 -> 1.05 -> 0 exit animation before navigation
       setSuccessExit(true);
@@ -67,7 +67,7 @@ export default function LoginPage() {
       }, 800);
     } catch (err) {
       if (err && typeof err === 'object' && err.unverified) {
-        toast.error('Account not verified. Redirecting to OTP verification...');
+        toast.error('Account not verified. Redirecting to OTP verification...', { id: 'auth-error' });
         setTimeout(() => {
           navigate('/verify-otp', { state: { userId: err.userId } });
         }, 1500);
@@ -83,7 +83,7 @@ export default function LoginPage() {
     setFormError('');
     try {
       const res = await dispatch(googleLoginAsync(credentialResponse.credential)).unwrap();
-      toast.success('Google Login successful! Connecting companion...');
+      toast.success('Google Login successful! Connecting companion...', { id: 'auth-success' });
       
       setSuccessExit(true);
       setTimeout(() => {
