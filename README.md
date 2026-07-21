@@ -1,5 +1,5 @@
 <h1 align="center">
-  ✨ MEGHA-AI ✨
+  ✨ Companion AI ✨
 </h1>
 
 <p align="center">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  MEGHA-AI is a next-generation intelligent platform that combines conversational AI, real-time coding sandboxes, voice interaction, document intelligence, desktop automation, productivity tools, and long-term AI memory into one seamless and dynamic web experience.
+  Companion AI is a next-generation intelligent platform that combines conversational AI, real-time coding sandboxes, voice interaction, document intelligence, desktop automation, productivity tools, and long-term AI memory into one seamless and dynamic web experience.
 </p>
 
 <p align="center">
@@ -21,13 +21,13 @@
 
 ## 📖 About The Project
 
-MEGHA-AI was built with the vision of creating an all-in-one personalized assistant that goes beyond simple chat. It remembers your preferences, executes code for you, analyzes your documents, helps you prepare for interviews, and automates your workflows. It leverages cutting-edge LLMs (via Groq and OpenRouter), alongside local execution environments to provide unprecedented speed and utility.
+Companion AI was built with the vision of creating an all-in-one personalized assistant that goes beyond simple chat. It remembers your preferences, executes code for you, analyzes your documents, helps you prepare for interviews, and automates your workflows. It leverages cutting-edge LLMs (via Groq and OpenRouter), alongside local execution environments to provide unprecedented speed and utility.
 
 ---
 
 ## ⚡ Core Features
 
-MEGHA-AI is packed with an ecosystem of powerful engines designed to boost your daily productivity:
+Companion AI is packed with an ecosystem of powerful engines designed to boost your daily productivity:
 
 ### 🤖 Intelligent AI Chat & Memory
 - **Context-Aware Conversations:** Chat with a highly intelligent AI that understands context.
@@ -45,7 +45,7 @@ MEGHA-AI is packed with an ecosystem of powerful engines designed to boost your 
 - **Document Generator:** Automatically generate official drafts, emails, and reports.
 
 ### 🎤 Voice & Desktop Integration
-- **Voice Assistant:** Communicate with MEGHA-AI completely hands-free using advanced Speech-to-Text and Text-to-Speech capabilities.
+- **Voice Assistant:** Communicate with Companion AI completely hands-free using advanced Speech-to-Text and Text-to-Speech capabilities.
 - **Desktop Automation:** Trigger local PC automations, file management, and terminal commands via natural language (when running the local desktop client).
 
 ### 🎓 Learning & Career Hub
@@ -57,7 +57,7 @@ MEGHA-AI is packed with an ecosystem of powerful engines designed to boost your 
 
 ## 🛠 Tech Stack
 
-MEGHA-AI is built using a modern, scalable, and highly performant full-stack architecture.
+Companion AI is built using a modern, scalable, and highly performant full-stack architecture.
 
 ### Frontend
 - **React 19 & Vite:** Blazing fast UI rendering and development experience.
@@ -84,7 +84,7 @@ MEGHA-AI is built using a modern, scalable, and highly performant full-stack arc
 
 ## 🚀 Installation & Setup
 
-Want to run MEGHA-AI locally? Follow these steps!
+Want to run Companion AI locally? Follow these steps!
 
 ### Prerequisites
 - Node.js (v18+)
