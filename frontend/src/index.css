@@ -136,6 +136,11 @@
               border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   padding: 0;
