@@ -71,7 +71,7 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Hero Headline */}
-          <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-black font-outfit leading-[1.1] tracking-tight text-slate-900 dark:text-white dark:drop-shadow-2xl">
+          <motion.h1 variants={itemVariants} className="text-4xl sm:text-5xl md:text-8xl font-black font-outfit leading-[1.2] md:leading-[1.1] tracking-tight text-slate-900 dark:text-white dark:drop-shadow-2xl">
             An AI Friend Who <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-fuchsia-500 to-rose-500 dark:from-violet-400 dark:via-fuchsia-400 dark:to-rose-400 animate-gradient-x inline-block">
               Remembers & Cares
@@ -149,7 +149,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-20 p-6 border-t border-slate-200 dark:border-white/5 text-center text-xs text-slate-500 dark:text-gray-500 max-w-7xl mx-auto w-full flex justify-between items-center backdrop-blur-md bg-white/40 dark:bg-[#05050A]/50">
+      <footer className="relative z-20 p-6 border-t border-slate-200 dark:border-white/5 text-center text-xs text-slate-500 dark:text-gray-500 max-w-7xl mx-auto w-full flex flex-col sm:flex-row justify-between items-center gap-4 backdrop-blur-md bg-white/40 dark:bg-[#05050A]/50">
         <span>&copy; 2026 CloserAI. Protected under AES-256 standards.</span>
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium shadow-sm dark:shadow-none">
           <Shield className="w-3.5 h-3.5" /> Secured Companion Cloud
