@@ -9,7 +9,7 @@ import ChatSidebar from '../components/ChatSidebar';
 import { updateConversation, deleteConversation } from '../store/chatSlice';
 import { Menu, Sparkles, Share2, MoreHorizontal, Pin, Archive, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import VoiceCallOverlay from '../components/VoiceCallOverlay';
 import LiveNativeVoice from '../components/LiveNativeVoice';
 
@@ -91,7 +91,6 @@ export default function VoicePage() {
 
   return (
     <div className="flex h-screen bg-bg text-text font-inter overflow-hidden relative">
-      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
 
       {/* Main Sidebar (Icon only) */}
       <div className="hidden md:block">

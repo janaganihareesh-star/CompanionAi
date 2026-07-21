@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import ThemeToggle from '../components/ThemeToggle';
 import { ArrowLeft, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import femaleFace from '../assets/female_face_v2.png';
@@ -73,7 +73,6 @@ export default function AINameSelectionPage() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <Toaster position="top-right" />
 
       {/* Progress (Step 2 of 3) */}
       <div className="flex justify-center gap-3 mt-4">

@@ -19,7 +19,7 @@ import { Smile, Search, MessageSquarePlus, Trash2, ArrowLeft, Menu, X, Pin, Pane
 import { MessageCircle, Mic, Target, Lightbulb, Clock, Video } from 'lucide-react';
 import Tooltip from '../components/Tooltip';
 import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import VoiceCallOverlay from '../components/VoiceCallOverlay';
 import SourcesPanel from '../components/SourcesPanel';
 import ChatSidebar from '../components/ChatSidebar';

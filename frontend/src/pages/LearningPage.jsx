@@ -272,7 +272,6 @@ export default function LearningPage() {
   return (
     <div className="flex h-screen bg-bg text-text overflow-hidden">
       <Sidebar />
-      <Toaster position="top-right" />
 
       {/* Main Workspace Split */}
       <main className="flex-1 flex overflow-hidden">

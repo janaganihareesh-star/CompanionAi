@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import ThemeToggle from '../components/ThemeToggle';
 import { Sparkles, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
@@ -121,7 +121,6 @@ export default function ForgotPasswordPage() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <Toaster position="top-right" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
