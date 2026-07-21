@@ -24,7 +24,7 @@ async function fetchLiveSearchResults(query, limit = 7) {
   if (query.toLowerCase().includes('reddit') || query.toLowerCase().includes('people saying')) {
     try {
       const redditUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&limit=5`;
-      const redRes = await axios.get(redditUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) CloserAI/13.0' }});
+      const redRes = await axios.get(redditUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Companion AI/13.0' }});
       
       if (redRes.data && redRes.data.data && redRes.data.data.children) {
         const posts = redRes.data.data.children;

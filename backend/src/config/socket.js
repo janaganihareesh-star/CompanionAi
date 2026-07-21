@@ -253,7 +253,7 @@ CRITICAL RULES FOR VOICE MODE:
           });
 
           const parts = [
-            { text: "You are CloserAI operating in True Native Voice Mode. Listen to this audio carefully. Detect the user's emotion from their voice tone, and respond directly to what they said in a conversational manner. If they speak Telugu, reply in Telugu." },
+            { text: "You are Companion AI operating in True Native Voice Mode. Listen to this audio carefully. Detect the user's emotion from their voice tone, and respond directly to what they said in a conversational manner. If they speak Telugu, reply in Telugu." },
             { inlineData: { mimeType: matches[1], data: matches[2] } }
           ];
 
@@ -309,7 +309,7 @@ CRITICAL RULES FOR VOICE MODE:
 
           // Call Gemini directly for a fast observation
           const aiResult = await aiService.generateAIResponse({
-            systemPrompt: "You are CloserAI's real-time vision core. The user is streaming video frames to you. Provide extremely brief (1 sentence) updates on what is happening. Do not use markdown.",
+            systemPrompt: "You are Companion AI's real-time vision core. The user is streaming video frames to you. Provide extremely brief (1 sentence) updates on what is happening. Do not use markdown.",
             messages: [{ role: 'user', parts }],
             energyLevel: 'high',
             domain: 'live_news' // bypassing heavy RAG

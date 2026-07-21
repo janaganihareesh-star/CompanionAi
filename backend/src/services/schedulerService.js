@@ -48,7 +48,7 @@ function scheduleTask(task) {
         parts: [{ text: task.aiPrompt }]
       }];
 
-      const systemPrompt = `You are CloserAI executing a background Workflow OS task.
+      const systemPrompt = `You are Companion AI executing a background Workflow OS task.
 Generate a comprehensive, beautiful response. Wrap it with CSS formatting and use [HISTORICAL], [CURRENT], and [FORECAST] tags if applicable.`;
 
       const response = await aiService.generateAIResponse({

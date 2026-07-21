@@ -41,7 +41,7 @@ export default function OSExecutionApprovalModal({ isOpen, onClose, command, tok
           </div>
           
           <p className="text-muted text-sm">
-            CloserAI is requesting permission to execute the following command <strong className="text-rose-500">directly on your Local Host Machine</strong>.
+            Companion AI is requesting permission to execute the following command <strong className="text-rose-500">directly on your Local Host Machine</strong>.
             <br/>This is not a sandbox. Only approve commands you trust.
           </p>
 

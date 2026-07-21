@@ -1,6 +1,6 @@
 {
-  "name": "CloserAI Operating System",
-  "short_name": "CloserAI",
+  "name": "Companion AI Operating System",
+  "short_name": "Companion AI",
   "description": "Your Universal Intelligent Companion OS",
   "start_url": "/",
   "display": "standalone",

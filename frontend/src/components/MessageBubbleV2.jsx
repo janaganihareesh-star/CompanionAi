@@ -524,7 +524,7 @@ const MessageBubble = React.memo(function MessageBubble({ message, isGroup, onAr
         isOpen={showShareModal} 
         onClose={() => setShowShareModal(false)} 
         message={message}
-        conversationTitle="CloserAI Conversation"
+        conversationTitle="Companion AI Conversation"
       />
     </motion.div>
   );

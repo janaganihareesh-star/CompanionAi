@@ -225,7 +225,7 @@ async function updateRollingSummary(conversationId) {
     const formattedMessages = messagesToSummarize.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
     const currentSummary = conversation.rollingSummary || 'No previous summary.';
     
-    const systemPrompt = `You are CloserAI's memory summarization engine. 
+    const systemPrompt = `You are Companion AI's memory summarization engine. 
 Your task is to take an existing conversation summary and a batch of new old messages, and merge them into a single, highly dense, unified summary of the entire conversation up to this point. 
 Focus on facts, user preferences, and important context. Do NOT use conversational filler.
 

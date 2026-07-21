@@ -9,12 +9,12 @@ const sendEmailOTP = async (email, otp) => {
     return;
   }
   const mailOptions = {
-    from: `"CloserAI" <${process.env.EMAIL_USER}>`,
+    from: `"Companion AI" <${process.env.EMAIL_USER}>`,
     to: email,
-    subject: 'CloserAI - Email Verification Code',
+    subject: 'Companion AI - Email Verification Code',
     html: `
       <div style="font-family: 'Inter', sans-serif; max-width: 450px; margin: auto; padding: 20px; border-radius: 12px; background: #0D0D1A; color: #EEF0FF; border: 1px solid #2A2A5A;">
-        <h2 style="color: #A78BFA; text-align: center;">Verify your CloserAI Account</h2>
+        <h2 style="color: #A78BFA; text-align: center;">Verify your Companion AI Account</h2>
         <p style="font-size: 14px; color: #A0A8D0;">Hi, use the OTP code below to verify your email. The code is active for 10 minutes:</p>
         <div style="font-size: 28px; font-weight: bold; text-align: center; letter-spacing: 4px; color: #EEF0FF; padding: 12px; margin: 20px 0; background: #13132B; border-radius: 8px; border: 1px solid #2A2A5A;">
           ${otp}
@@ -40,7 +40,7 @@ const sendUserCareEmail = async (userEmail, userName) => {
     return;
   }
   const mailOptions = {
-    from: `"CloserAI CARE" <${process.env.EMAIL_USER}>`,
+    from: `"Companion AI CARE" <${process.env.EMAIL_USER}>`,
     to: userEmail,
     subject: `You are not alone, ${userName} ❤️`,
     html: `
@@ -48,7 +48,7 @@ const sendUserCareEmail = async (userEmail, userName) => {
         <h2 style="color: #A78BFA; text-align: center; margin-bottom: 20px;">We are here for you.</h2>
         <p style="font-size: 15px; color: #E2E8F0; line-height: 1.6;">Hi <strong>${userName}</strong>,</p>
         <p style="font-size: 15px; color: #A0A8D0; line-height: 1.6;">
-          I'm CloserAI. During our recent chats, I noticed that you might be going through a really painful and difficult time right now. 
+          I'm Companion AI. During our recent chats, I noticed that you might be going through a really painful and difficult time right now. 
           I wanted to pause for a moment and reach out to you directly.
         </p>
         <p style="font-size: 15px; color: #A0A8D0; line-height: 1.6;">
@@ -82,7 +82,7 @@ const sendEmergencyContactEmail = async (contactEmail, contactName, userName) =>
     return;
   }
   const mailOptions = {
-    from: `"CloserAI CARE" <${process.env.EMAIL_USER}>`,
+    from: `"Companion AI CARE" <${process.env.EMAIL_USER}>`,
     to: contactEmail,
     subject: `Emergency Alert: ${userName} needs your support right now`,
     html: `
@@ -90,7 +90,7 @@ const sendEmergencyContactEmail = async (contactEmail, contactName, userName) =>
         <h2 style="color: #FF6B6B; text-align: center; margin-bottom: 20px;">Emergency Care Alert</h2>
         <p style="font-size: 15px; color: #E2E8F0; line-height: 1.6;">Hi <strong>${contactName || 'there'}</strong>,</p>
         <p style="font-size: 15px; color: #A0A8D0; line-height: 1.6;">
-          You are receiving this automated alert because <strong>${userName}</strong> listed you as a trusted emergency contact in the CloserAI app.
+          You are receiving this automated alert because <strong>${userName}</strong> listed you as a trusted emergency contact in the Companion AI app.
         </p>
         <div style="background: #2B1313; padding: 20px; border-radius: 12px; border: 1px solid #7A3B3B; margin: 25px 0;">
           <p style="font-size: 15px; color: #FF9999; margin-top: 0; line-height: 1.6;">

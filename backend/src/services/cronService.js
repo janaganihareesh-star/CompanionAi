@@ -122,7 +122,7 @@ async function startMorningReportCron() {
         if (!pref.userId || !pref.userId.email) continue;
 
         console.log(`[CronService] Generating report for user: ${pref.userId.email}`);
-        const prompt = `You are CloserAI, an autonomous intelligence agent. 
+        const prompt = `You are Companion AI, an autonomous intelligence agent. 
 Create a concise morning intelligence brief for ${pref.userId.fullName}.
 Include:
 1. A highly motivating good morning message.
@@ -139,14 +139,14 @@ Keep it under 300 words. Format beautifully in HTML.`;
         const mailOptions = {
           from: process.env.EMAIL_USER || 'test@gmail.com',
           to: pref.userId.email,
-          subject: '☀️ Your CloserAI Morning Intelligence Brief',
+          subject: '☀️ Your Companion AI Morning Intelligence Brief',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
               <h2 style="color: #0d9488;">Good Morning, ${pref.userId.fullName}!</h2>
               ${result.text}
               <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
               <p style="font-size: 12px; color: #888; text-align: center;">
-                Sent autonomously by CloserAI via Agenda
+                Sent autonomously by Companion AI via Agenda
               </p>
             </div>
           `

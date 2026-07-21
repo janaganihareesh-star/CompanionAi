@@ -9,9 +9,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : {};
   
-  const title = data.title || 'CloserAI';
+  const title = data.title || 'Companion AI';
   const options = {
-    body: data.body || 'You have a new message from CloserAI',
+    body: data.body || 'You have a new message from Companion AI',
     icon: '/vite.svg',
     badge: '/vite.svg',
     vibrate: [200, 100, 200],

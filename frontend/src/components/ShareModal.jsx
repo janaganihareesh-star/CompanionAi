@@ -69,7 +69,7 @@ export default function ShareModal({ isOpen, onClose, message, conversationTitle
                   <p className="mb-3 leading-relaxed">{previewText}</p>
                   <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
                     <span>File/Conversation → Complete discussion</span>
-                    <span className="text-white font-bold text-lg opacity-80 font-outfit">CloserAI</span>
+                    <span className="text-white font-bold text-lg opacity-80 font-outfit">Companion AI</span>
                   </div>
                   {/* Subtle fade effect at bottom of preview */}
                   <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none"></div>

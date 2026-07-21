@@ -38,8 +38,8 @@ export default function LandingPage() {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-2 font-extrabold text-2xl tracking-wide font-outfit text-slate-900 dark:text-white"
         >
-          <img src="/logo.png" alt="CloserAI Logo" className="w-10 h-10 object-contain rounded-full shadow-lg ring-2 ring-fuchsia-500/50" />
-          <span>CloserAI</span>
+          <img src="/logo.png" alt="Companion AI Logo" className="w-10 h-10 object-contain rounded-full shadow-lg ring-2 ring-fuchsia-500/50" />
+          <span>Companion AI</span>
         </motion.div>
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
@@ -80,7 +80,7 @@ export default function LandingPage() {
 
           {/* Subtitle */}
           <motion.p variants={itemVariants} className="text-slate-600 dark:text-gray-400 max-w-2xl mx-auto text-lg md:text-xl leading-relaxed font-light mt-4">
-            CloserAI matches your emotional wave, remembers everything you share, details technical roadmaps, coaches your mock interviews, and supports you in 18 Indian languages plus English.
+            Companion AI matches your emotional wave, remembers everything you share, details technical roadmaps, coaches your mock interviews, and supports you in 18 Indian languages plus English.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -150,7 +150,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="relative z-20 p-6 border-t border-slate-200 dark:border-white/5 text-center text-xs text-slate-500 dark:text-gray-500 max-w-7xl mx-auto w-full flex justify-between items-center backdrop-blur-md bg-white/40 dark:bg-[#05050A]/50">
-        <span>&copy; 2026 CloserAI. Protected under AES-256 standards.</span>
+        <span>&copy; 2026 Companion AI. Protected under AES-256 standards.</span>
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium shadow-sm dark:shadow-none">
           <Shield className="w-3.5 h-3.5" /> Secured Companion Cloud
         </span>
