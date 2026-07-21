@@ -148,8 +148,9 @@ exports.executeCode = async (req, res) => {
     console.log(`[Code Engine] Executing ${canonicalLang} with Docker...`);
     
     exec(command, { timeout: 10000, cwd: tempDir }, async (error, stdout, stderr) => {
-      const isDockerMissing = (error && error.message && (error.message.includes('failed to connect to the docker API') || error.message.includes('docker: not found') || error.message.includes('docker: command not found'))) || 
-                              (stderr && (stderr.includes('failed to connect to the docker API') || stderr.includes('error during connect') || stderr.includes('docker: not found') || stderr.includes('docker: command not found')));
+      const isDockerMissing = (error && error.code === 127) ||
+                              (error && error.message && (error.message.includes('failed to connect to the docker API') || error.message.includes('docker: not found') || error.message.includes('docker: command not found') || error.message.includes('docker'))) || 
+                              (stderr && (stderr.includes('failed to connect to the docker API') || stderr.includes('error during connect') || stderr.includes('docker: not found') || stderr.includes('docker: command not found') || stderr.includes('docker')));
 
       if (isDockerMissing) {
         console.warn('[Code Engine] Docker unavailable. Falling back to native host execution...');
@@ -264,7 +265,7 @@ exports.executeCodeInternally = async (language, codeStr) => {
 
     return new Promise((resolve, reject) => {
       exec(command, { timeout: 15000, cwd: tempDir }, (error, stdout, stderr) => {
-        const isDockerMissing = (error && error.message && (error.message.includes('docker') || error.message.includes('docker: not found') || error.message.includes('docker: command not found'))) || (stderr && (stderr.includes('docker') || stderr.includes('docker: not found') || stderr.includes('docker: command not found')));
+        const isDockerMissing = (error && error.code === 127) || (error && error.message && (error.message.includes('docker') || error.message.includes('docker: not found') || error.message.includes('docker: command not found'))) || (stderr && (stderr.includes('docker') || stderr.includes('docker: not found') || stderr.includes('docker: command not found')));
         if (isDockerMissing) {
           if (tempDir) fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
           resolve({ stdout: '', stderr: 'Docker is required for secure internal execution but is not running.', error: new Error('Docker unavailable') });
