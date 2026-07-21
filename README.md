@@ -1,11 +1,3 @@
-<p align="center">
-  <img src="assets/banner.png" alt="CloserAI Banner" width="100%">
-</p>
-
-<p align="center">
-  <img src="assets/logo.png" width="180" alt="CloserAI Logo">
-</p>
-
 <h1 align="center">
 🤖 CloserAI
 </h1>
