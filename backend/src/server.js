@@ -57,11 +57,21 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL, 
-    'http://localhost:5173',
-    'https://companion-ai-khaki.vercel.app'
-  ].filter(Boolean),
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL, 
+      'http://localhost:5173',
+      'https://companion-ai-khaki.vercel.app'
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    // or if the origin is in our allowed list, or if it's a Vercel deployment
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
