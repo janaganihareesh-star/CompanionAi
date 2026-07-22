@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiStar } from 'react-icons/fi';
+import { Brain } from 'lucide-react';
 
 const SplashScreen = ({ onComplete }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -31,14 +32,7 @@ const SplashScreen = ({ onComplete }) => {
             className="flex flex-col items-center"
           >
             <div className="relative flex items-center justify-center w-32 h-32 mb-6">
-              <img 
-                src="/logo.png" 
-                alt="CloserAI Logo" 
-                className="w-full h-full object-contain rounded-full shadow-2xl ring-4 ring-violet-500/50"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+              <Brain className="w-full h-full text-violet-400 drop-shadow-[0_0_30px_rgba(139,92,246,0.6)]" />
             </div>
             
             <h1 className="text-3xl font-bold text-white tracking-wider mb-2">

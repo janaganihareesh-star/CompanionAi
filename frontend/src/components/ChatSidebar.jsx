@@ -80,7 +80,7 @@ export default function ChatSidebar({
       {/* Top Bar: Logo & Close */}
       <div className="p-3 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer font-bold tracking-wide font-outfit text-text" onClick={() => navigate('/home')}>
-          <img src="/logo.png" alt="CloserAI Logo" className="w-8 h-8 object-contain" />
+          <Brain className="w-7 h-7 text-accent drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
           <span className="font-bold text-text text-lg">CloserAI</span>
         </div>
         <Tooltip text="Close Sidebar" position="right">
