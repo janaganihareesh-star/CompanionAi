@@ -74,7 +74,14 @@ exports.sendMessage = async (req, res, next) => {
     const [safetyOverride, emotionResult, promptData, longTermMemories] = await Promise.all([
       safetyService.checkSafetyTriggers(message, { userName, aiName }),
       emotionService.detectEmotion({ userId, text: message }),
-      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId }),
+      promptBuilder.buildPrompt({ 
+        userId, 
+        currentMessage: message, 
+        conversationId,
+        localTime: req.body.localTime,
+        localHour: req.body.localHour,
+        localDay: req.body.localDay
+      }),
       ragService.searchGlobalMessageHistory(userId, message, conversationId, 1)
     ]);
 
@@ -733,7 +740,15 @@ exports.sendMessageStream = async (req, res, next) => {
     const [safetyOverride, emotionResult, promptData, longTermMemories] = await Promise.all([
       safetyService.checkSafetyTriggers(message, { userName, aiName }),
       emotionService.detectEmotion({ userId, text: message }),
-      promptBuilder.buildPrompt({ userId, currentMessage: message, conversationId, attachments }),
+      promptBuilder.buildPrompt({ 
+        userId, 
+        currentMessage: message, 
+        conversationId, 
+        attachments,
+        localTime: req.body.localTime,
+        localHour: req.body.localHour,
+        localDay: req.body.localDay
+      }),
       ragService.searchGlobalMessageHistory(userId, message, conversationId, 1)
     ]);
 

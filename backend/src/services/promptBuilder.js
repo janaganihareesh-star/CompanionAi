@@ -1133,7 +1133,7 @@ function getLastInteractionDays(recentMessages) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN BUILD PROMPT FUNCTION
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildPrompt({ userId, currentMessage, conversationId, attachments }) {
+async function buildPrompt({ userId, currentMessage, conversationId, attachments, localTime: reqLocalTime, localHour: reqLocalHour, localDay: reqLocalDay }) {
   const cacheService = require('./cacheService');
 
   // STEP 1 — Load all data in parallel with caching for static/slow queries
@@ -1212,11 +1212,11 @@ async function buildPrompt({ userId, currentMessage, conversationId, attachments
     detectedExpertise = 'Advanced';
   }
 
-  // Time context
-  const now         = new Date();
-  const currentHour = now.getHours();
-  const dayOfWeek   = now.toLocaleDateString('en-IN', { weekday: 'long' });
-  const currentTime = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  // Time context (Prefer frontend local time if provided, else fallback to server time)
+  const now = new Date();
+  const currentHour = reqLocalHour !== undefined ? parseInt(reqLocalHour, 10) : now.getHours();
+  const dayOfWeek = reqLocalDay || now.toLocaleDateString('en-IN', { weekday: 'long' });
+  const currentTime = reqLocalTime || now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
   // STEP 4 — Detect which active modules to load
   const activeModules = detectActiveModules(currentMessage, recentMood);

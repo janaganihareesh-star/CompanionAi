@@ -76,7 +76,14 @@ export const sendMessage = createAsyncThunk(
   async ({ conversationId, message, imageBase64 }, { getState, rejectWithValue }) => {
     try {
       const { token } = getState().auth;
-      const res = await axios.post('/api/chat/send', { conversationId, message, imageBase64 }, getAuthConfig(token));
+      const res = await axios.post('/api/chat/send', { 
+        conversationId, 
+        message, 
+        imageBase64,
+        localTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        localHour: new Date().getHours(),
+        localDay: new Date().toLocaleDateString('en-US', { weekday: 'long' })
+      }, getAuthConfig(token));
       return res.data; 
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to dispatch message.');
@@ -100,7 +107,10 @@ export const sendMessageStreamAsync = ({ conversationId, message, attachments, i
       message,
       attachments,
       imageBase64,
-      model: selectedModel
+      model: selectedModel,
+      localTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      localHour: new Date().getHours(),
+      localDay: new Date().toLocaleDateString('en-US', { weekday: 'long' })
     }, getAuthConfig(token));
 
     // Ensure we capture the conversationId if this was a new chat
