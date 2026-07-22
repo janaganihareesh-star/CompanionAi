@@ -65,11 +65,11 @@ app.use(cors({
     ].filter(Boolean);
     
     // Allow requests with no origin (like mobile apps or curl requests)
-    // or if the origin is in our allowed list, or if it's a Vercel deployment
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    // or if the origin is in our allowed list, or if it's a Vercel deployment, or local network IPs
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) || /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error('Not allowed by CORS: ' + origin));
     }
   },
   credentials: true
