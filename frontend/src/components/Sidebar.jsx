@@ -73,9 +73,9 @@ export default function Sidebar() {
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-3 font-bold text-2xl tracking-wide font-outfit">
               <Brain className="w-8 h-8 text-accent drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">CloserAI</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-gray-400">CloserAI</span>
             </div>
-            <button className="md:hidden p-1.5 text-muted hover:text-white bg-white/5 rounded-lg transition" onClick={() => setIsMobileOpen(false)}>
+            <button className="md:hidden p-1.5 text-muted hover:text-slate-900 dark:hover:text-white bg-black/5 dark:bg-white/5 rounded-lg transition" onClick={() => setIsMobileOpen(false)}>
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -101,10 +101,10 @@ export default function Sidebar() {
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer text-left group ${
                   isActive
                     ? 'bg-gradient-to-r from-accent/20 to-transparent border-l-4 border-accent text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]'
-                    : 'text-muted hover:bg-white/5 hover:text-gray-200 hover:translate-x-1 border-l-4 border-transparent'
+                    : 'text-muted hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-gray-200 hover:translate-x-1 border-l-4 border-transparent'
                 }`}
               >
-                <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'text-accent' : 'text-muted group-hover:text-gray-200 group-hover:scale-110'}`} />
+                <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'text-accent' : 'text-muted group-hover:text-slate-900 dark:group-hover:text-gray-200 group-hover:scale-110'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -127,7 +127,7 @@ export default function Sidebar() {
           className="w-full relative group overflow-hidden rounded-xl p-[1px] transition-transform hover:scale-[1.02]"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/40 via-accent/40 to-emerald-500/40 opacity-40 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-surface/90 text-gray-200 transition cursor-pointer">
+          <div className="relative w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-surface/90 text-slate-800 dark:text-gray-200 transition cursor-pointer">
             <div className="flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -142,7 +142,7 @@ export default function Sidebar() {
         {/* Bond Progress */}
         <div className="space-y-2 relative z-10">
           <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-            <span className="text-gray-400">Bond with {companionName}</span>
+            <span className="text-slate-500 dark:text-gray-400">Bond with {companionName}</span>
             <span className="text-accent drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]">{bondPercentage}%</span>
           </div>
           <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden shadow-inner">

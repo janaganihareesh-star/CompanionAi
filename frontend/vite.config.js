@@ -61,11 +61,11 @@ export default defineConfig(({ mode }) => {
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://closerai-qcj3.onrender.com',
+        target: 'http://localhost:6999',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'https://closerai-qcj3.onrender.com',
+        target: 'http://localhost:6999',
         ws: true,
       },
     },
