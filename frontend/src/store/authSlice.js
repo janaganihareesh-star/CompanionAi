@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import api from '../utils/api';
 
 // Load stored authentication state
 const storedToken = localStorage.getItem('closer-token') || null;
@@ -80,7 +81,7 @@ export const googleLoginAsync = createAsyncThunk(
   'auth/googleLogin',
   async (token, { rejectWithValue }) => {
     try {
-      const res = await axios.post('/api/auth/google', { token });
+      const res = await api.post('/api/auth/google', { token });
       return res.data; // { success, token, user }
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Google Login failed.');

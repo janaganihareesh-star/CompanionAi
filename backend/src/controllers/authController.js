@@ -406,6 +406,6 @@ exports.googleLogin = async (req, res, next) => {
     });
   } catch (err) {
     console.error("Google Auth Error:", err);
-    res.status(400).json({ success: false, message: 'Google authentication failed' });
+    res.status(400).json({ success: false, message: 'Google auth error: ' + err.message });
   }
 };
