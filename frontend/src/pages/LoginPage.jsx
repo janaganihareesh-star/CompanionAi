@@ -114,7 +114,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center relative px-4">
+    <div className="min-h-screen bg-bg flex flex-col relative px-4 py-12 overflow-y-auto">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
