@@ -22,7 +22,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#05050A] text-slate-900 dark:text-white relative flex flex-col justify-between overflow-hidden selection:bg-accent selection:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#05050A] text-slate-900 dark:text-white relative flex flex-col justify-between overflow-x-hidden selection:bg-accent selection:text-white transition-colors duration-300">
       {/* --- Ambient Glowing Backgrounds (Soft in light, vibrant in dark) --- */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-400/20 dark:bg-violet-600/20 rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-normal dark:mix-blend-screen" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-400/20 dark:bg-rose-600/20 rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-normal dark:mix-blend-screen" />
