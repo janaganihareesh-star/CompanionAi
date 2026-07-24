@@ -22,7 +22,7 @@ if ('serviceWorker' in navigator) {
 // Provide a robust fallback if VITE_API_URL is missing
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://closerai-qcj3.onrender.com';
 axios.defaults.withCredentials = true;
-axios.defaults.timeout = 30000; // 30 seconds timeout to prevent infinite spinning if backend is asleep
+axios.defaults.timeout = 60000; // 60 seconds timeout to give Render backend enough time to wake up from sleep
 
 axios.interceptors.response.use(
   (response) => response,

@@ -67,7 +67,6 @@ const ConceptLabPage = lazy(() => import('./pages/ConceptLabPage'));
 
 const SuspenseFallback = () => (
   <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg relative">
-    <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url('/mesh-bg.jpg')" }} />
     <Loader2 className="w-8 h-8 text-accent animate-spin mb-4 relative z-10" />
     <p className="text-muted text-sm font-medium animate-pulse relative z-10 font-outfit tracking-wide">Loading module...</p>
   </div>
