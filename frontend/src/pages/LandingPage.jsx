@@ -28,8 +28,7 @@ export default function LandingPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-rose-400/20 dark:bg-rose-600/20 rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-normal dark:mix-blend-screen" />
       <div className="absolute top-[40%] left-[50%] translate-x-[-50%] w-[60%] h-[60%] bg-indigo-300/20 dark:bg-indigo-500/10 rounded-full blur-[120px] dark:blur-[150px] pointer-events-none mix-blend-normal dark:mix-blend-screen" />
       
-      {/* Subtle Grid overlay */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.04] pointer-events-none mix-blend-overlay"></div>
+      {/* Subtle Grid overlay removed due to 404 */}
 
       {/* Header */}
       <header className="relative z-20 p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
