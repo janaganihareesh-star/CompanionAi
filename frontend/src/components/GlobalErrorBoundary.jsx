@@ -18,7 +18,18 @@ class GlobalErrorBoundary extends React.Component {
   }
 
   handleRestart = () => {
-    window.location.href = '/home'; // Redirect to a safe route
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+        window.location.reload(true);
+      }).catch(() => {
+        window.location.reload(true);
+      });
+    } else {
+      window.location.reload(true);
+    }
   };
 
   render() {
