@@ -13,42 +13,12 @@ import { extractTextFromFile } from '../utils/fileParser';
 import GoogleDrivePicker from './GoogleDrivePicker';
 
 function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifactOpen, onOpenSources, messagesEndRef, isAtBottom }) {
-  const [displayedText, setDisplayedText] = useState('');
-  
-  // Keep a ref of isAtBottom so the rAF loop always has the latest value
-  const isAtBottomRef = useRef(isAtBottom);
-  useEffect(() => {
-    isAtBottomRef.current = isAtBottom;
-  }, [isAtBottom]);
-
-  useEffect(() => {
-    let animationFrameId;
-    let currentIndex = displayedText.length;
-    const targetText = streamingMessage || '';
-
-    const updateText = () => {
-      if (currentIndex < targetText.length) {
-        // Reveal 2-3 characters at a time for smooth but fast typing
-        currentIndex = Math.min(currentIndex + 3, targetText.length);
-        setDisplayedText(targetText.slice(0, currentIndex));
-        
-        // Auto-scroll as the text expands if we are near the bottom
-        if (isAtBottomRef.current && messagesEndRef?.current) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
-        }
-        
-        animationFrameId = requestAnimationFrame(updateText);
-      }
-    };
-
-    animationFrameId = requestAnimationFrame(updateText);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [streamingMessage, messagesEndRef]);
-
+  // Direct render to prevent browser tab crash (OOM) caused by 
+  // rendering heavy ReactMarkdown at 60fps in the previous requestAnimationFrame loop.
   return (
     <MessageBubble 
       key="streaming-temp" 
-      message={{ _id: 'streaming-temp', sender: 'ai', content: displayedText + '█', mood: 'neutral' }} 
+      message={{ _id: 'streaming-temp', sender: 'ai', content: (streamingMessage || '') + '█', mood: 'neutral' }} 
       onArtifactOpen={onArtifactOpen} 
       onCanvasArtifactOpen={onCanvasArtifactOpen}
       onOpenCanvas={onArtifactOpen} 
