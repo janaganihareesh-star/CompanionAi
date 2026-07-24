@@ -137,8 +137,7 @@
 }
 
 html, body, #root {
-  max-width: 100vw;
-  overflow-x: hidden;
+  min-height: 100%;
 }
 
 /* Custom Scrollbar for Advanced UI */
@@ -184,7 +183,6 @@ body {
   -webkit-touch-callout: none; /* Disable iOS callout menu */
   -webkit-user-select: none;   /* Disable text selection */
   user-select: none;
-  overscroll-behavior-y: none; /* Disable pull-to-refresh / rubber banding */
   -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
