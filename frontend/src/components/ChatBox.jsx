@@ -18,7 +18,7 @@ function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifact
   return (
     <MessageBubble 
       key="streaming-temp" 
-      message={{ _id: 'streaming-temp', sender: 'ai', content: (streamingMessage || '') + '█', mood: 'neutral' }} 
+      message={{ _id: 'streaming-temp', sender: 'ai', content: (streamingMessage || '') + ' ⚡', mood: 'neutral' }} 
       onArtifactOpen={onArtifactOpen} 
       onCanvasArtifactOpen={onCanvasArtifactOpen}
       onOpenCanvas={onArtifactOpen} 

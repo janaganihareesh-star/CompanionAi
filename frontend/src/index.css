@@ -157,6 +157,22 @@ html, body, #root {
   background: var(--accent-violet);
 }
 
+/* Advanced Neon Typing Cursor for Chat */
+@keyframes neon-blink {
+  0%, 100% { opacity: 1; text-shadow: 0 0 10px var(--accent-violet), 0 0 20px var(--accent-cyan); }
+  50% { opacity: 0; text-shadow: none; }
+}
+.neon-typing-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background-color: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan);
+  animation: neon-blink 1s step-end infinite;
+  vertical-align: text-bottom;
+  margin-left: 4px;
+}
+
 body {
   margin: 0;
   padding: 0;
