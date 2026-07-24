@@ -30,7 +30,11 @@ exports.initTerminal = (io) => {
   ]);
 
   dockerProcess.on('error', (err) => {
-    console.error('[TerminalService] Docker spawn error. Is Docker installed?', err);
+    if (err.code === 'ENOENT') {
+      console.log('\x1b[33m%s\x1b[0m', '[TerminalService] ⚠️ Docker is not installed on this machine. Sandboxed terminal feature is disabled.');
+    } else {
+      console.error('[TerminalService] Docker spawn error:', err);
+    }
     io.emit('terminal:data', '\r\n[ERROR] Failed to start secure terminal. Ensure Docker is running.\r\n');
   });
 
