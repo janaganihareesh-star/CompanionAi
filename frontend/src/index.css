@@ -185,7 +185,6 @@ body {
   user-select: none;
   -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
   /* Native Mobile App Safe Area Paddings */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
