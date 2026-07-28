@@ -466,7 +466,6 @@ export default function PluginStorePage() {
           </motion.div>
         )}
       </AnimatePresence>
-      </AnimatePresence>
 
       {/* OAuth Simulator */}
       {oauthPlugin && (
