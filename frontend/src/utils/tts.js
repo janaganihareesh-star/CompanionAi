@@ -26,18 +26,6 @@ class TTSManager {
     }
     const { text, lang } = this.audioQueue.shift();
 
-    // Check for native speech synthesis support to reduce latency
-    if (window.speechSynthesis && !text.includes('```')) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === 'te' ? 'te-IN' : 'en-US';
-      utterance.onend = () => this._playNext();
-      utterance.onerror = () => this._playNext();
-      
-      this.isPlaying = true;
-      window.speechSynthesis.speak(utterance);
-      return;
-    }
-
     this.isPlaying = true;
     
     // Fallback to backend TTS

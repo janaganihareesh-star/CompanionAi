@@ -13,8 +13,15 @@ router.get('/stream', async (req, res) => {
     // Use premium Edge TTS (Azure Neural voices) for super smooth natural Telugu
     const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
     
-    // Choose voice based on language (te-IN-ShrutiNeural for Telugu Female, en-US-AriaNeural for English Female)
-    const voiceName = lang.startsWith('te') ? 'te-IN-ShrutiNeural' : 'en-US-AriaNeural';
+    // Check if the text actually contains Telugu script
+    const hasTeluguScript = /[\u0C00-\u0C7F]/.test(text);
+    
+    let voiceName;
+    if (hasTeluguScript) {
+      voiceName = 'te-IN-ShrutiNeural'; // Native Telugu Script -> use Telugu neural voice
+    } else {
+      voiceName = 'en-IN-NeerjaNeural'; // English/Tanglish -> use Indian English neural voice for highly human accent
+    }
     
     const tts = new MsEdgeTTS();
     await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
