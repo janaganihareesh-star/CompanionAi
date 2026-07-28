@@ -5,12 +5,13 @@ import TypingIndicator from './TypingIndicator';
 import AIAvatar from './AIAvatar';
 import LiveVision from './LiveVision';
 import AgentTerminal from './AgentTerminal';
-import { Send, Paperclip, Mic, MicOff, Image as ImageIcon, X, Share2, MoreHorizontal, Pin, Archive, Trash2, Cloud } from 'lucide-react';
+import { Send, Paperclip, Mic, MicOff, Image as ImageIcon, X, Share2, MoreHorizontal, Pin, Archive, Trash2, Cloud, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import imageCompression from 'browser-image-compression';
 import { playPopSound, playChimeSound } from '../utils/soundUtils';
 import { extractTextFromFile } from '../utils/fileParser';
 import GoogleDrivePicker from './GoogleDrivePicker';
+import AdvancedPlusMenu from './AdvancedPlusMenu';
 
 function SmoothStreamBubble({ streamingMessage, onArtifactOpen, onCanvasArtifactOpen, onOpenSources, messagesEndRef, isAtBottom }) {
   // Direct render to prevent browser tab crash (OOM) caused by 
@@ -60,6 +61,7 @@ const ChatBox = React.memo(function ChatBox({
 }) {
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const moreActionsRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
@@ -498,27 +500,29 @@ const ChatBox = React.memo(function ChatBox({
             className="hidden"
             onChange={handleFileChange}
           />
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-muted hover:text-accent transition flex-shrink-0 cursor-pointer"
-            title="Attach File"
-          >
-            <Paperclip className="w-5 h-5" />
-          </motion.button>
-          
-          <GoogleDrivePicker onFilePicked={handleGoogleDriveFilePicked}>
-            <motion.div
+          <div className="relative flex items-center justify-center">
+            <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2 text-muted hover:text-[#4285F4] transition flex-shrink-0 cursor-pointer"
-              title="Attach from Google Drive"
+              type="button"
+              onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
+              className="w-8 h-8 rounded-full bg-[#2A2B32] hover:bg-[#3A3B42] text-gray-300 transition-colors flex items-center justify-center flex-shrink-0 cursor-pointer border border-[#3c3c3e]"
+              title="Add attachment"
             >
-              <Cloud className="w-5 h-5" />
-            </motion.div>
-          </GoogleDrivePicker>
+              <Plus className={`w-5 h-5 transition-transform duration-200 ${isPlusMenuOpen ? 'rotate-45' : ''}`} />
+            </motion.button>
+            
+            <AdvancedPlusMenu 
+              isOpen={isPlusMenuOpen} 
+              onClose={() => setIsPlusMenuOpen(false)}
+              onFileClick={() => fileInputRef.current?.click()}
+              onOptionSelect={(prefix) => {
+                setInputText(prefix);
+                const inputEl = document.getElementById('chat-message-input');
+                if (inputEl) inputEl.focus();
+              }}
+            />
+          </div>
           
           <LiveVision 
             isActive={isLiveVision} 
