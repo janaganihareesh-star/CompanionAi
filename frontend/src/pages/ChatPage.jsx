@@ -205,7 +205,14 @@ export default function ChatPage() {
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this chat history?')) {
-      deleteConversation(id);
+      deleteConversation(id).unwrap().then(() => {
+        fetchConversations();
+        if (currentConversation?._id === id) {
+          handleNewChat();
+        }
+      }).catch(err => {
+        toast.error('Failed to delete chat.');
+      });
     }
   };
 
@@ -241,7 +248,12 @@ export default function ChatPage() {
           handleNewChat={handleNewChat}
           handleDelete={(id) => {
             if (window.confirm('Are you sure you want to permanently delete this chat?')) {
-              dispatch(deleteConversation(id)).unwrap().then(() => fetchConversations());
+              deleteConversation(id).unwrap().then(() => {
+                fetchConversations();
+                if (currentConversation?._id === id) {
+                  handleNewChat();
+                }
+              }).catch(err => toast.error('Failed to delete chat.'));
             }
           }}
           onRename={(id, title) => dispatch(updateConversation({ id, updates: { title } })).unwrap().then(() => fetchConversations())}
