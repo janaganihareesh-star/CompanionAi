@@ -81,7 +81,7 @@ export default function ChatSidebar({
       <div className="p-3 flex items-center justify-between">
         <div className="flex items-center gap-2 cursor-pointer font-bold tracking-wide font-outfit text-text" onClick={() => navigate('/home')}>
           <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
-          <span className="font-bold text-text text-lg">CloserAI</span>
+          <span className="font-bold text-text text-base">CloserAI</span>
         </div>
         <Tooltip text="Close Sidebar" position="right">
           <button 
