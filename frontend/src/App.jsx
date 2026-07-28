@@ -8,62 +8,82 @@ import { syncCRDTData } from './utils/crdtSyncEngine';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from './components/PageTransition';
 
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage'));
-const OtpVerificationPage = lazy(() => import('./pages/OtpVerificationPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+// Wrapper to automatically reload the page if a lazy-loaded chunk fails to fetch
+// This happens when a new version is deployed and the browser cache tries to load old chunk names.
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('retry-lazy-refreshed') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('retry-lazy-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.sessionStorage.setItem('retry-lazy-refreshed', 'true');
+        return window.location.reload(true);
+      }
+      throw error;
+    }
+  });
+
+const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'));
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
+const RegisterPage = lazyWithRetry(() => import('./pages/RegisterPage'));
+const OtpVerificationPage = lazyWithRetry(() => import('./pages/OtpVerificationPage'));
+const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage'));
 
 // Onboarding Pages
-const GenderSelectionPage = lazy(() => import('./pages/GenderSelectionPage'));
-const RelationshipSelectionPage = lazy(() => import('./pages/RelationshipSelectionPage'));
-const AINameSelectionPage = lazy(() => import('./pages/AINameSelectionPage'));
+const GenderSelectionPage = lazyWithRetry(() => import('./pages/GenderSelectionPage'));
+const RelationshipSelectionPage = lazyWithRetry(() => import('./pages/RelationshipSelectionPage'));
+const AINameSelectionPage = lazyWithRetry(() => import('./pages/AINameSelectionPage'));
 
 // Main App Pages
-const HomePage = lazy(() => import('./pages/HomePage'));
-const ChatPage = lazy(() => import('./pages/ChatPage'));
-const VoicePage = lazy(() => import('./pages/VoicePage'));
-const MemoryVaultPage = lazy(() => import('./pages/MemoryVaultPage'));
-const DreamBoardPage = lazy(() => import('./pages/DreamBoardPage'));
-const GoalsPage = lazy(() => import('./pages/GoalsPage'));
-const AchievementsPage = lazy(() => import('./pages/AchievementsPage'));
-const LearningPage = lazy(() => import('./pages/LearningPage'));
-const ResumeAnalyzerPage = lazy(() => import('./pages/ResumeAnalyzerPage'));
-const MockInterviewPage = lazy(() => import('./pages/MockInterviewPage'));
-const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const TimelinePage = lazy(() => import('./pages/TimelinePage'));
-const WeeklyReflectionPage = lazy(() => import('./pages/WeeklyReflectionPage'));
-const SummaryPage = lazy(() => import('./pages/SummaryPage'));
-const PersonaPage = lazy(() => import('./pages/PersonaPage'));
+const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
+const ChatPage = lazyWithRetry(() => import('./pages/ChatPage'));
+const VoicePage = lazyWithRetry(() => import('./pages/VoicePage'));
+const MemoryVaultPage = lazyWithRetry(() => import('./pages/MemoryVaultPage'));
+const DreamBoardPage = lazyWithRetry(() => import('./pages/DreamBoardPage'));
+const GoalsPage = lazyWithRetry(() => import('./pages/GoalsPage'));
+const AchievementsPage = lazyWithRetry(() => import('./pages/AchievementsPage'));
+const LearningPage = lazyWithRetry(() => import('./pages/LearningPage'));
+const ResumeAnalyzerPage = lazyWithRetry(() => import('./pages/ResumeAnalyzerPage'));
+const MockInterviewPage = lazyWithRetry(() => import('./pages/MockInterviewPage'));
+const NotificationsPage = lazyWithRetry(() => import('./pages/NotificationsPage'));
+const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
+const SettingsPage = lazyWithRetry(() => import('./pages/SettingsPage'));
+const TimelinePage = lazyWithRetry(() => import('./pages/TimelinePage'));
+const WeeklyReflectionPage = lazyWithRetry(() => import('./pages/WeeklyReflectionPage'));
+const SummaryPage = lazyWithRetry(() => import('./pages/SummaryPage'));
+const PersonaPage = lazyWithRetry(() => import('./pages/PersonaPage'));
 
 // Career & Productivity
-const CareerHubPage = lazy(() => import('./pages/CareerHubPage'));
-const ResumeBuilderPage = lazy(() => import('./pages/ResumeBuilderPage'));
-const CoverLetterPage = lazy(() => import('./pages/CoverLetterPage'));
-const SalaryEnginePage = lazy(() => import('./pages/SalaryEnginePage'));
-const ProjectBuilderPage = lazy(() => import('./pages/ProjectBuilderPage'));
-const HabitTrackerPage = lazy(() => import('./pages/HabitTrackerPage'));
-const SearchPage = lazy(() => import('./pages/SearchPage'));
+const CareerHubPage = lazyWithRetry(() => import('./pages/CareerHubPage'));
+const ResumeBuilderPage = lazyWithRetry(() => import('./pages/ResumeBuilderPage'));
+const CoverLetterPage = lazyWithRetry(() => import('./pages/CoverLetterPage'));
+const SalaryEnginePage = lazyWithRetry(() => import('./pages/SalaryEnginePage'));
+const ProjectBuilderPage = lazyWithRetry(() => import('./pages/ProjectBuilderPage'));
+const HabitTrackerPage = lazyWithRetry(() => import('./pages/HabitTrackerPage'));
+const SearchPage = lazyWithRetry(() => import('./pages/SearchPage'));
 
 // Engines 35-46
-const PluginStorePage = lazy(() => import('./pages/PluginStorePage'));
-const DocumentGeneratorPage = lazy(() => import('./pages/DocumentGeneratorPage'));
-const DocumentAIPage = lazy(() => import('./pages/DocumentAIPage'));
-const CodeEnginePage = lazy(() => import('./pages/CodeEnginePage'));
-const TranslatorPage = lazy(() => import('./pages/TranslatorPage'));
-const PromptEngineerPage = lazy(() => import('./pages/PromptEngineerPage'));
-const DataAnalysisPage = lazy(() => import('./pages/DataAnalysisPage'));
-const ContentCreatorPage = lazy(() => import('./pages/ContentCreatorPage'));
-const AcademicPage = lazy(() => import('./pages/AcademicPage'));
-const CalculatorPage = lazy(() => import('./pages/CalculatorPage'));
-const OfficialDraftsPage = lazy(() => import('./pages/OfficialDraftsPage'));
-const BusinessPage = lazy(() => import('./pages/BusinessPage'));
-const SharedChatView = lazy(() => import('./pages/SharedChatView'));
-const WatchView = lazy(() => import('./pages/WatchView'));
-const CommandPalette = lazy(() => import('./components/CommandPalette'));
-const ConceptLabPage = lazy(() => import('./pages/ConceptLabPage'));
+const PluginStorePage = lazyWithRetry(() => import('./pages/PluginStorePage'));
+const DocumentGeneratorPage = lazyWithRetry(() => import('./pages/DocumentGeneratorPage'));
+const DocumentAIPage = lazyWithRetry(() => import('./pages/DocumentAIPage'));
+const CodeEnginePage = lazyWithRetry(() => import('./pages/CodeEnginePage'));
+const TranslatorPage = lazyWithRetry(() => import('./pages/TranslatorPage'));
+const PromptEngineerPage = lazyWithRetry(() => import('./pages/PromptEngineerPage'));
+const DataAnalysisPage = lazyWithRetry(() => import('./pages/DataAnalysisPage'));
+const ContentCreatorPage = lazyWithRetry(() => import('./pages/ContentCreatorPage'));
+const AcademicPage = lazyWithRetry(() => import('./pages/AcademicPage'));
+const CalculatorPage = lazyWithRetry(() => import('./pages/CalculatorPage'));
+const OfficialDraftsPage = lazyWithRetry(() => import('./pages/OfficialDraftsPage'));
+const BusinessPage = lazyWithRetry(() => import('./pages/BusinessPage'));
+const SharedChatView = lazyWithRetry(() => import('./pages/SharedChatView'));
+const WatchView = lazyWithRetry(() => import('./pages/WatchView'));
+const CommandPalette = lazyWithRetry(() => import('./components/CommandPalette'));
+const ConceptLabPage = lazyWithRetry(() => import('./pages/ConceptLabPage'));
 
 const SuspenseFallback = () => (
   <div className="h-screen w-screen flex flex-col items-center justify-center bg-bg relative">
