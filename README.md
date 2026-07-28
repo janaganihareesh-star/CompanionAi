@@ -158,7 +158,7 @@ docker-compose up --build
 ## 👨‍💻 Developer
 
 **Hareesh Janagani**  
-*AI Developer • MERN Stack Developer • Java Developer*
+*MERN Stack Developer • Java Developer*
 
 - **GitHub:** [@janaganihareesh-star](https://github.com/janaganihareesh-star)
 - **LinkedIn:** [Hareesh Janagani](https://linkedin.com/in/janagani-hareesh-734947318)
