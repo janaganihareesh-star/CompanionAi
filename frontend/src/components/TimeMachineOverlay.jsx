@@ -62,16 +62,16 @@ const TimeMachineOverlay = ({ isOpen, onClose }) => {
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4 font-mono"
             >
-                <div className="absolute top-6 right-6 z-50">
-                    <button onClick={onClose} className="text-white/50 hover:text-white bg-white/10 p-3 rounded-full transition-colors">
-                        <FiX size={24} />
-                    </button>
-                </div>
+
 
                 <div className={`transition-all duration-700 ease-in-out border-2 rounded-3xl relative overflow-hidden text-center shadow-[0_0_150px_rgba(147,51,234,0.3)]
                     ${mediaData ? 'w-full max-w-4xl h-[80vh] border-purple-900/30 bg-black' : 'bg-[#050014] border-purple-900/50 w-full max-w-2xl p-8 max-h-[85vh] overflow-y-auto'}
                 `}>
                     
+                    <button onClick={onClose} className="absolute top-6 right-6 text-purple-600 hover:text-purple-400 bg-purple-900/20 hover:bg-purple-900/40 p-2 rounded-full transition-colors z-50">
+                        <FiX size={24} />
+                    </button>
+
                     {/* Background Glow */}
                     {!mediaData && (
                         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black pointer-events-none"></div>

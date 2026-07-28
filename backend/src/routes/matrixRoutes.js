@@ -74,32 +74,42 @@ Uptime: ${(os.uptime() / 3600).toFixed(2)} Hours`;
                 break;
                 
             case 'OPEN_URL':
-                try {
-                    await execPromise(`start "" "${parsed.url}"`, { shell: 'cmd.exe' });
-                    output = `SUCCESS: Uplink established to '${parsed.url}'.`;
-                } catch (e) {
-                    output = `ERROR: Failed to route to '${parsed.url}'. ${e.message.substring(0, 50)}`;
+                if (os.platform() === 'win32') {
+                    try {
+                        await execPromise(`start "" "${parsed.url}"`, { shell: 'cmd.exe' });
+                        output = `SUCCESS: Uplink established to '${parsed.url}'.`;
+                    } catch (e) {
+                        output = `ERROR: Failed to route to '${parsed.url}'. ${e.message.substring(0, 50)}`;
+                    }
+                } else {
+                    output = `SUCCESS: Simulated Uplink established to '${parsed.url}'. (Cloud Server restriction: Cannot launch local browser)`;
                 }
                 break;
                 
             case 'SEARCH_WEB':
-                try {
-                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(parsed.query)}`;
-                    await execPromise(`start "" "${searchUrl}"`, { shell: 'cmd.exe' });
-                    output = `SUCCESS: Querying global network for '${parsed.query}'.`;
-                } catch (e) {
-                    output = `ERROR: Search uplink failed. ${e.message.substring(0, 50)}`;
+                if (os.platform() === 'win32') {
+                    try {
+                        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(parsed.query)}`;
+                        await execPromise(`start "" "${searchUrl}"`, { shell: 'cmd.exe' });
+                        output = `SUCCESS: Querying global network for '${parsed.query}'.`;
+                    } catch (e) {
+                        output = `ERROR: Search uplink failed. ${e.message.substring(0, 50)}`;
+                    }
+                } else {
+                    output = `SUCCESS: Simulated search for '${parsed.query}'. (Cloud Server restriction: Cannot launch local browser)`;
                 }
                 break;
 
             case 'OPEN_APP':
-                // Safe execution on Windows
-                // Using 'start' to open applications by name
-                try {
-                    await execPromise(`start "" "${parsed.appName}"`, { shell: 'cmd.exe' });
-                    output = `SUCCESS: Initialized launch sequence for '${parsed.appName}'.`;
-                } catch (e) {
-                    output = `ERROR: Failed to launch '${parsed.appName}'. ${e.message.substring(0, 50)}`;
+                if (os.platform() === 'win32') {
+                    try {
+                        await execPromise(`start "" "${parsed.appName}"`, { shell: 'cmd.exe' });
+                        output = `SUCCESS: Initialized launch sequence for '${parsed.appName}'.`;
+                    } catch (e) {
+                        output = `ERROR: Failed to launch '${parsed.appName}'. ${e.message.substring(0, 50)}`;
+                    }
+                } else {
+                    output = `SUCCESS: Application '${parsed.appName}' recognized. (Cloud Server restriction: Cannot launch local applications)`;
                 }
                 break;
                 

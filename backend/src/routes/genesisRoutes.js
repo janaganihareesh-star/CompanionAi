@@ -16,12 +16,12 @@ router.post('/synthesize', auth, async (req, res) => {
 CRITICAL RULES:
 1. Identify the EXACT language or script the user used (e.g., Telugu, English, Hindi, Tanglish).
 2. Generate a highly scientific, fascinating biological description of this creature (its DNA, habitat, special abilities, and behavior). This description MUST be strictly in the EXACT SAME LANGUAGE and script the user used.
-3. Generate a highly detailed, photorealistic 8K cinematic image generation prompt for this creature. This prompt MUST be strictly in ENGLISH.
+3. Generate a highly detailed, photorealistic 8K cinematic image generation prompt for this creature. This prompt MUST be strictly in ENGLISH. The prompt MUST aggressively enforce the EXACT physical combination or traits the user requested (e.g., if they said 'tiger with a snake body', you must explicitly describe a hybrid creature that is half tiger and half snake, not just a regular tiger).
 
 Format your output STRICTLY as valid JSON:
 {
     "description": "Your biological description in the user's language/script...",
-    "image_prompt": "Highly detailed 8K photorealistic English prompt of the creature in its natural habitat..."
+    "image_prompt": "Highly detailed 8K photorealistic English prompt of the hybrid/creature emphasizing the exact requested traits..."
 }`;
         
         const llmResponse = await modelRouter.routeQuery(sysPrompt, 'high');
@@ -36,7 +36,7 @@ Format your output STRICTLY as valid JSON:
             };
         }
 
-        const encodedPrompt = encodeURIComponent(parsed.image_prompt + ", masterpiece, award-winning photography, hyper-realistic, 8k resolution, highly detailed, sharp focus, real life");
+        const encodedPrompt = encodeURIComponent(organism + ", " + parsed.image_prompt + ", masterpiece, award-winning photography, hyper-realistic, 8k resolution, highly detailed, sharp focus, real life");
         const mediaUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&model=flux&enhance=false`;
 
         res.json({
