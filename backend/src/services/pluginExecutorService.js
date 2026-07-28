@@ -96,7 +96,7 @@ const PLUGIN_REGISTRY = {
     }
   },
   canva: {
-    envKey: 'CANVA_API_KEY', // Simplified check
+    envKey: 'CANVA_CLIENT_ID', // Simplified check
     execute: async (action, params) => {
       // Canva APIs are highly restrictive and require user OAuth flow. 
       // This is a robust fallback response for the AI to handle gracefully.
@@ -104,6 +104,111 @@ const PLUGIN_REGISTRY = {
         success: false, 
         message: "Canva requires direct user OAuth login which isn't fully set up in the backend yet. Tell the user you tried to connect but Canva blocked the direct API call. Propose they click a manual link to Canva for now." 
       };
+    }
+  },
+  slack: {
+    envKey: 'SLACK_WEBHOOK_URL',
+    execute: async (action, params) => {
+      const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+      try {
+        if (action === 'send_message') {
+          const res = await axios.post(webhookUrl, { text: params.message });
+          return { success: true, message: 'Message sent to Slack successfully!' };
+        }
+        return { error: true, message: `Action '${action}' is not supported yet for Slack.` };
+      } catch (err) {
+        return { error: true, message: err.response?.data || err.message };
+      }
+    }
+  },
+  notion: {
+    envKey: 'NOTION_API_KEY',
+    execute: async (action, params) => {
+      const token = process.env.NOTION_API_KEY;
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      };
+      try {
+        if (action === 'search') {
+          const res = await axios.post('https://api.notion.com/v1/search', { query: params.query }, { headers });
+          return { success: true, results: res.data.results.map(r => r.id) };
+        }
+        return { error: true, message: `Action '${action}' is not supported yet for Notion.` };
+      } catch (err) {
+        return { error: true, message: err.response?.data?.message || err.message };
+      }
+    }
+  },
+  zomato: {
+    envKey: 'ZOMATO_API_KEY',
+    execute: async (action, params) => {
+      // Mocked deep link for Zomato search
+      const query = encodeURIComponent(params.item || params.restaurant || 'food');
+      return { success: true, message: `Found results for ${query} on Zomato.`, url: `https://www.zomato.com/search?q=${query}` };
+    }
+  },
+  swiggy: {
+    envKey: 'SWIGGY_API_KEY',
+    execute: async (action, params) => {
+      const query = encodeURIComponent(params.item || 'food');
+      return { success: true, message: `Found results for ${query} on Swiggy.`, url: `https://www.swiggy.com/search?res=${query}` };
+    }
+  },
+  uber: {
+    envKey: 'UBER_CLIENT_ID',
+    execute: async (action, params) => {
+      const dropoff = encodeURIComponent(params.destination || '');
+      return { success: true, message: `Uber link generated to ${params.destination}.`, url: `uber://?client_id=${process.env.UBER_CLIENT_ID}&action=setPickup&pickup=my_location&dropoff[formatted_address]=${dropoff}` };
+    }
+  },
+  ola: {
+    envKey: 'OLA_CLIENT_ID',
+    execute: async (action, params) => {
+      return { success: true, message: `Ola link generated to ${params.destination}.`, url: `https://book.olacabs.com/?drop=${encodeURIComponent(params.destination || '')}` };
+    }
+  },
+  bookmyshow: {
+    envKey: 'BOOKMYSHOW_API_KEY',
+    execute: async (action, params) => {
+      const movie = encodeURIComponent(params.movie || '');
+      return { success: true, message: `Searching for ${movie} tickets on BookMyShow.`, url: `https://in.bookmyshow.com/explore/movies?q=${movie}` };
+    }
+  },
+  amazon: {
+    envKey: 'AMAZON_AFFILIATE_ID',
+    execute: async (action, params) => {
+      const query = encodeURIComponent(params.product || '');
+      return { success: true, message: `Found products for ${query} on Amazon.`, url: `https://www.amazon.in/s?k=${query}&tag=${process.env.AMAZON_AFFILIATE_ID}` };
+    }
+  },
+  flipkart: {
+    envKey: 'FLIPKART_AFFILIATE_ID',
+    execute: async (action, params) => {
+      const query = encodeURIComponent(params.product || '');
+      return { success: true, message: `Found products for ${query} on Flipkart.`, url: `https://www.flipkart.com/search?q=${query}&affid=${process.env.FLIPKART_AFFILIATE_ID}` };
+    }
+  },
+  myntra: {
+    envKey: 'MYNTRA_API_KEY',
+    execute: async (action, params) => {
+      const query = encodeURIComponent(params.product || '');
+      return { success: true, message: `Found fashion items for ${query} on Myntra.`, url: `https://www.myntra.com/${query}` };
+    }
+  },
+  meesho: {
+    envKey: 'MEESHO_API_KEY',
+    execute: async (action, params) => {
+      const query = encodeURIComponent(params.product || '');
+      return { success: true, message: `Found products for ${query} on Meesho.`, url: `https://www.meesho.com/search?q=${query}` };
+    }
+  },
+  district: {
+    envKey: 'DISTRICT_API_KEY',
+    execute: async (action, params) => {
+      const query = encodeURIComponent(params.product || '');
+      return { success: true, message: `Found items for ${query} on District app.`, url: `https://district.app/search?q=${query}` };
     }
   }
 };
