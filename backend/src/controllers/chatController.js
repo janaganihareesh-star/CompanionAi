@@ -1038,13 +1038,11 @@ exports.verifyFact = async (req, res) => {
     `;
 
     const aiService = require('../services/aiService');
-    const result = await aiService.generateContent(
-      [{ text: verificationPrompt }],
-      'gemini-1.5-flash',
-      [],
-      [],
-      true // Expect JSON response
-    );
+    const result = await aiService.generateAIResponse({
+      systemPrompt: "You are a strict, objective Fact-Checking AI. Respond ONLY with valid JSON.",
+      messages: [{ role: 'user', parts: [{ text: verificationPrompt }] }],
+      _isOrchestratorCall: true
+    });
 
     let verificationData;
     try {
