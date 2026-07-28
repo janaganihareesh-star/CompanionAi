@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
+import OAuthSimulator from '../components/OAuthSimulator';
+import { Check } from 'lucide-react';
 
 export const MOCK_PLUGINS = [
   // FEATURED (12 plugins)
@@ -57,6 +59,7 @@ export default function PluginStorePage() {
   const [activeTab, setActiveTab] = useState('Featured');
   const [selectedPlugin, setSelectedPlugin] = useState(null);
   const [installedPlugins, setInstalledPlugins] = useState([]);
+  const [oauthPlugin, setOauthPlugin] = useState(null);
   
   // Spotlight State
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -184,17 +187,33 @@ export default function PluginStorePage() {
             </div>
             <h3 className="text-xl font-bold text-white mb-4">Most Used Plugins</h3>
             <div className="bg-[#171717] border border-white/10 rounded-2xl overflow-hidden">
-              {['Canva', 'Adobe Photoshop', 'GitHub', 'Replit'].map((name, i) => (
-                <div key={name} className="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                  <div className="text-white font-medium">{name}</div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-48 h-2 bg-black/50 rounded-full overflow-hidden">
-                      <div className="h-full bg-accent" style={{ width: `${80 - (i * 15)}%` }}></div>
+              {installedPlugins.filter(p => p.isEnabled).length === 0 ? (
+                <div className="p-8 text-center text-gray-500">No plugins connected yet. Go to Featured or Productivity to install some!</div>
+              ) : (
+                installedPlugins.filter(p => p.isEnabled).map((installed, i) => {
+                  const pluginData = MOCK_PLUGINS.find(p => p.id === installed.pluginName);
+                  if (!pluginData) return null;
+                  return (
+                    <div key={pluginData.id} className="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                      <div className="flex items-center gap-3">
+                         <div 
+                           className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                           style={{ backgroundColor: pluginData.iconBg, color: pluginData.iconColor }}
+                         >
+                           {pluginData.iconText}
+                         </div>
+                         <div className="text-white font-medium">{pluginData.name}</div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-32 h-2 bg-black/50 rounded-full overflow-hidden">
+                          <div className="h-full bg-accent" style={{ width: `${Math.max(10, 80 - (i * 15))}%` }}></div>
+                        </div>
+                        <span className="text-gray-400 text-sm">Active</span>
+                      </div>
                     </div>
-                    <span className="text-gray-400 text-sm">{80 - (i * 15)} uses</span>
-                  </div>
-                </div>
-              ))}
+                  )
+                })
+              )}
             </div>
 
             <div className="mt-12 bg-surface border border-white/10 p-8 rounded-2xl">
@@ -228,22 +247,36 @@ export default function PluginStorePage() {
             {filteredPlugins.map(plugin => (
               <div 
                 key={plugin.id} 
-                onClick={() => setSelectedPlugin(plugin)}
-                className="group flex items-center justify-between p-4 rounded-xl hover:bg-[#2A2B32] cursor-pointer transition-colors"
+                className="group flex items-center justify-between p-4 rounded-xl hover:bg-[#2A2B32] transition-colors border border-transparent hover:border-white/5"
               >
-                <div className="flex items-center gap-4">
+                <div 
+                  className="flex items-center gap-4 cursor-pointer flex-1"
+                  onClick={() => setSelectedPlugin(plugin)}
+                >
                   <div 
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0"
                     style={{ backgroundColor: plugin.iconBg, color: plugin.iconColor }}
                   >
                     {plugin.iconText}
                   </div>
                   <div>
                     <h3 className="font-semibold text-[15px] text-white">{plugin.name}</h3>
-                    <p className="text-gray-400 text-sm mt-0.5">{plugin.desc}</p>
+                    <p className="text-gray-400 text-sm mt-0.5 line-clamp-1 pr-4">{plugin.desc}</p>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                {isPluginActive(plugin.id) ? (
+                  <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                    <Check className="w-4 h-4" /> Connected
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setOauthPlugin(plugin)}
+                    className="w-8 h-8 rounded-full border border-gray-600 flex items-center justify-center text-gray-400 hover:text-white hover:border-white transition-colors shrink-0"
+                  >
+                    <span className="text-lg leading-none mb-0.5">+</span>
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -433,6 +466,19 @@ export default function PluginStorePage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </AnimatePresence>
+
+      {/* OAuth Simulator */}
+      {oauthPlugin && (
+        <OAuthSimulator 
+          plugin={oauthPlugin}
+          onCancel={() => setOauthPlugin(null)}
+          onComplete={() => {
+            togglePlugin(oauthPlugin.id);
+            setOauthPlugin(null);
+          }}
+        />
+      )}
     </div>
   );
 }
