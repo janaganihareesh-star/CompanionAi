@@ -94,7 +94,19 @@ export const sendMessage = createAsyncThunk(
 export const sendMessageStreamAsync = ({ conversationId, message, attachments, imageBase64 }) => async (dispatch, getState) => {
   // Dispatch pending action with a dummy requestId 'stream-req' and the args.
   // This correctly populates action.meta.arg so the optimistic UI reducer works.
-  dispatch(sendMessage.pending('stream-req', { message, attachments, imageBase64 }));
+  const streamReqId = Date.now().toString();
+  dispatch(sendMessage.pending(streamReqId, { message, attachments, imageBase64 }));
+
+  // Fallback timeout: If socket fails or backend crashes, prevent UI from being stuck on "PROCESSING" forever.
+  const timeoutId = setTimeout(() => {
+    const { chat } = getState();
+    // Only cancel if NO chunks have been received (streamingMessage is empty) and it's still sending
+    if (chat.isSending && !chat.streamingMessage) {
+      console.warn('Stream timed out with no response. Dispatching streamError.');
+      dispatch({ type: 'chat/streamError' });
+      dispatch(sendMessage.rejected('Request timed out. Please try again.', streamReqId));
+    }
+  }, 20000); // 20 seconds timeout to start receiving at least one chunk
 
   try {
     const { token } = getState().auth;
@@ -119,6 +131,7 @@ export const sendMessageStreamAsync = ({ conversationId, message, attachments, i
     }
 
   } catch (err) {
+    clearTimeout(timeoutId);
     console.error('Send message stream error:', err);
     dispatch(sendMessage.rejected(err.message));
     dispatch({ type: 'chat/streamError' });
