@@ -123,7 +123,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 30 }}
         animate={
           successExit 
-            ? { scale: [1, 1.05, 0], opacity: [1, 1, 0] } 
+            ? { scale: [1, 1.02, 1], opacity: 1 } 
             : errorShake 
               ? { x: [0, -8, 8, -8, 8, 0] } 
               : { opacity: 1, y: 0 }
@@ -209,10 +209,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || successExit}
             className="w-full bg-accent text-white rounded-xl py-3 font-semibold hover:opacity-90 transition flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isLoading ? (
+            {isLoading || successExit ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               'Login'

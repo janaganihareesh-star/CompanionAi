@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { sendEmailOTP } = require('../utils/emailService');
 const { OAuth2Client } = require('google-auth-library');
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID || '832155996880-n01g8gaidc6b4a417ska2ron3c8gh4mr.apps.googleusercontent.com');
 
 // POST /api/auth/register
 exports.register = async (req, res, next) => {
@@ -349,7 +349,7 @@ exports.googleLogin = async (req, res, next) => {
 
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: process.env.GOOGLE_CLIENT_ID || '832155996880-n01g8gaidc6b4a417ska2ron3c8gh4mr.apps.googleusercontent.com',
     });
     const payload = ticket.getPayload();
     const { email, name } = payload;

@@ -30,7 +30,7 @@ export default function HomePage() {
   const dispatch = useDispatch();
 
   const user = useSelector((state) => state.auth.user);
-  const userName = user ? user.fullName.split(' ')[0] : 'Friend';
+  const userName = user?.fullName ? user.fullName.split(' ')[0] : 'Friend';
   const stats = useSelector((state) => state.settings.stats);
   const pref = useSelector((state) => state.settings.preferences);
   const { activeGoals } = useSelector((state) => state.goal);
@@ -137,8 +137,8 @@ export default function HomePage() {
     }
   }, [stats, milestoneShown]);
 
-  const companionName = pref ? pref.aiName : 'Companion';
-  const friendshipDays = stats ? stats.friendshipDays : 0;
+  const companionName = pref?.aiName ? pref.aiName : 'Companion';
+  const friendshipDays = stats?.friendshipDays ? stats.friendshipDays : 0;
 
   const getRelationshipEmoji = (days) => {
     if (days <= 3) return '🤝';
@@ -150,7 +150,7 @@ export default function HomePage() {
     return '♾️';
   };
 
-  const displayDays = stats ? stats.friendshipDays + 1 : 1;
+  const displayDays = stats?.friendshipDays ? stats.friendshipDays + 1 : 1;
   const relationshipEmoji = getRelationshipEmoji(displayDays);
 
   // Stagger variants
@@ -269,11 +269,11 @@ export default function HomePage() {
               <div className="flex flex-1 max-w-sm justify-around text-center md:border-l border-white/10 md:pl-6 w-full">
                 <div className="space-y-1">
                   <span className="block text-muted text-[10px] font-bold uppercase tracking-widest">Messages</span>
-                  <span className="font-extrabold text-xl text-text/90">{stats ? stats.totalMessages : 0}</span>
+                  <span className="font-extrabold text-xl text-text/90">{stats?.totalMessages || 0}</span>
                 </div>
                 <div className="space-y-1">
                   <span className="block text-muted text-[10px] font-bold uppercase tracking-widest">Trust Score</span>
-                  <span className="font-extrabold text-xl text-text/90">{stats ? stats.trustScore : 10}%</span>
+                  <span className="font-extrabold text-xl text-text/90">{stats?.trustScore || 10}%</span>
                 </div>
                 <div className="space-y-1">
                   <span className="block text-muted text-[10px] font-bold uppercase tracking-widest">Memories</span>
@@ -369,8 +369,8 @@ export default function HomePage() {
       <MilestoneModal
         isOpen={milestoneOpen}
         onClose={() => setMilestoneOpen(false)}
-        milestoneTitle={`Bond Level: ${stats ? stats.bondLevelName : 'New Friend'}`}
-        milestoneDescription={`Congratulations! You have initialized a trust bond score of ${stats ? stats.trustScore : 10}% with your companion. Keep talking to unlock higher levels!`}
+        milestoneTitle={`Bond Level: ${stats?.bondLevelName || 'New Friend'}`}
+        milestoneDescription={`Congratulations! You have initialized a trust bond score of ${stats?.trustScore || 10}% with your companion. Keep talking to unlock higher levels!`}
         milestoneIcon="🤝"
       />
     </div>
