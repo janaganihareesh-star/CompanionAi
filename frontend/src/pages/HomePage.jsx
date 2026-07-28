@@ -150,7 +150,7 @@ export default function HomePage() {
     return '♾️';
   };
 
-  const displayDays = stats?.friendshipDays ? stats.friendshipDays + 1 : 1;
+  const displayDays = (stats?.friendshipDays ?? 0) + 1;
   const relationshipEmoji = getRelationshipEmoji(displayDays);
 
   // Stagger variants
