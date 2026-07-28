@@ -139,8 +139,8 @@ export default function LoginPage() {
       >
         {/* Title */}
         <div className="text-center space-y-2 mb-6">
-          <div className="flex justify-center items-center gap-1.5 font-bold text-xl tracking-wide font-outfit text-text">
-            <Sparkles className="w-6 h-6 text-accent" />
+          <div className="flex justify-center items-center gap-2 font-bold text-xl tracking-wide font-outfit text-text">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
             <span>CloserAI</span>
           </div>
           <h2 className="text-2xl font-bold font-outfit text-text">Welcome Back</h2>
