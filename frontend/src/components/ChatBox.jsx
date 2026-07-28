@@ -409,7 +409,7 @@ const ChatBox = React.memo(function ChatBox({
       >
         <AgentTerminal socket={socket} />
         
-        {isLoading ? (
+        {isLoading && messages.length === 0 ? (
           <div className="flex flex-col space-y-6 w-full animate-pulse">
             <div className="flex justify-end">
               <div className="h-10 w-48 bg-white/5 rounded-2xl rounded-tr-sm"></div>
