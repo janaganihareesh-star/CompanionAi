@@ -140,7 +140,7 @@ export default function LoginPage() {
         {/* Title */}
         <div className="text-center space-y-2 mb-6">
           <div className="flex justify-center items-center gap-2 font-bold text-xl tracking-wide font-outfit text-text">
-            <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
+            <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
             <span>CloserAI</span>
           </div>
           <h2 className="text-2xl font-bold font-outfit text-text">Welcome Back</h2>

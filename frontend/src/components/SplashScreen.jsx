@@ -30,7 +30,7 @@ const SplashScreen = ({ onComplete }) => {
             transition={{ duration: 0.6, ease: 'backOut' }}
             className="flex flex-col items-center"
           >
-            <div className="relative flex items-center justify-center w-48 h-48 mb-8">
+            <div className="relative flex items-center justify-center w-72 h-72 -mb-8">
               <img src="/logo.png" alt="CloserAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(139,92,246,0.6)]" />
             </div>
             

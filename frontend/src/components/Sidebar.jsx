@@ -72,7 +72,7 @@ export default function Sidebar() {
         <div className="p-6 flex flex-col gap-6 overflow-y-auto flex-1 custom-scrollbar">
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-3 font-bold text-2xl tracking-wide font-outfit">
-              <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
+              <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-gray-400">CloserAI</span>
             </div>
             <button className="md:hidden p-1.5 text-muted hover:text-slate-900 dark:hover:text-white bg-black/5 dark:bg-white/5 rounded-lg transition" onClick={() => setIsMobileOpen(false)}>

@@ -37,7 +37,7 @@ export default function LandingPage() {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-2 font-extrabold text-2xl tracking-wide font-outfit text-slate-900 dark:text-white"
         >
-          <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+          <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
           <span>CloserAI</span>
         </motion.div>
         <motion.div 
