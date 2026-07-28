@@ -401,6 +401,42 @@ async function generateAIResponse({ systemPrompt, messages, energyLevel, domain,
       }
     }
 
+    // Handle Universal Plugin Executor Call
+    const pluginMatch = text.match(/<PLUGIN_CALL>\s*(\{[\s\S]*?\})\s*<\/PLUGIN_CALL>/);
+    if (pluginMatch) {
+      try {
+        const callObj = JSON.parse(pluginMatch[1].trim());
+        if (callObj.plugin && callObj.action) {
+          console.log(`[Plugin Executor] Executing action ${callObj.action} on ${callObj.plugin}...`);
+          const pluginExecutorService = require('./pluginExecutorService');
+          const execResult = await pluginExecutorService.executePluginCall(callObj.plugin, callObj.action, callObj.params || {});
+          
+          // Append the execution result back and recurse
+          console.log('[Plugin Executor] Result received, sending back to AI for final synthesis...');
+          messages.push({
+            role: 'model',
+            parts: [{ text: text }]
+          });
+          messages.push({
+            role: 'user',
+            parts: [{
+              text: `[SYSTEM: Plugin execution completed. Result: ${JSON.stringify(execResult)}. Please summarize this result to the user naturally without showing the raw JSON.]`
+            }]
+          });
+          
+          const followUpResponse = await generateAIResponse({ systemPrompt, messages, energyLevel, domain, domains });
+          return {
+            text: followUpResponse.text,
+            tokensUsed: tokensUsed + (followUpResponse.tokensUsed || 0),
+            confidenceScore: followUpResponse.confidenceScore || confidenceScore,
+            sources: followUpResponse.sources || ['Plugin Executor']
+          };
+        }
+      } catch (e) {
+        console.error('Failed to parse or execute plugin call block:', e.message);
+      }
+    }
+
     // Handle Function Calling
     if (part?.functionCall) {
       console.log('Gemini called function:', part.functionCall.name);

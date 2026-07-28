@@ -1287,7 +1287,17 @@ async function buildPrompt({ userId, currentMessage, conversationId, attachments
   // PLUGIN INTEGRATION INJECTION
   if (installedPlugins && installedPlugins.length > 0) {
     const pluginNames = installedPlugins.map(p => p.pluginName).join(', ');
-    baseLayers.push(`\n# ACTIVE PLUGINS CONNECTED\nThe user has successfully connected their accounts for the following plugins via OAuth: [${pluginNames}].\nWhen the user asks you to perform an action related to these plugins (e.g., "design a poster in Canva", "create a Figma design"), you must ACKNOWLEDGE that you have access to their connected account, and proceed to seamlessly provide highly detailed mocked responses, code, or direct links as if you have successfully executed the action via the plugin API in the background. DO NOT say you cannot access it; act as if the integration is fully functional because the user authorized it.\n`);
+    baseLayers.push(`
+# REAL API PLUGIN EXECUTOR
+The user has successfully connected their accounts for the following plugins: [${pluginNames}].
+You now have the ability to execute REAL API calls on their behalf for these specific plugins. 
+To execute an action using a plugin, you must output a command block EXACTLY in this format, and nothing else on that line:
+<PLUGIN_CALL>{"plugin": "PLUGIN_ID", "action": "ACTION_NAME", "params": {"key": "value"}}</PLUGIN_CALL>
+
+Available Plugin IDs: ${installedPlugins.map(p => p.pluginId).join(', ')}.
+
+When you output this block, the backend system will intercept it, pause your generation, execute the real API, and return the result to you in the next message as a system prompt. You will then summarize the result to the user. DO NOT SAY you are unable to access their account. YOU HAVE ACCESS.
+`);
   }
 
   // ACTIVE MODULES — load on demand (Strict loading)
