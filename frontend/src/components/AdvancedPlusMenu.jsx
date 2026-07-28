@@ -9,8 +9,10 @@ import {
   Workflow, 
   BarChart2, 
   Triangle,
-  Plus
+  Plus,
+  Zap
 } from 'lucide-react';
+import { MOCK_PLUGINS } from '../pages/PluginStorePage';
 
 const MENU_ITEMS = [
   {
@@ -79,10 +81,31 @@ const MENU_ITEMS = [
   }
 ];
 
+// Combine hardcoded tools with all available plugins
+const ALL_ITEMS = [
+  ...MENU_ITEMS,
+  ...MOCK_PLUGINS.filter(p => !MENU_ITEMS.find(m => m.id === p.id || m.title.toLowerCase() === p.name.toLowerCase())).map(plugin => ({
+    id: plugin.id,
+    icon: Zap, // Fallback icon for plugins
+    customIcon: (
+      <div 
+        className="w-[18px] h-[18px] rounded-sm flex items-center justify-center text-[10px] font-bold shrink-0"
+        style={{ backgroundColor: plugin.iconBg, color: plugin.iconColor }}
+      >
+        {plugin.iconText}
+      </div>
+    ),
+    title: plugin.name,
+    desc: plugin.desc,
+    iconClass: '',
+    prefixText: `/${plugin.id} `
+  }))
+];
+
 export default function AdvancedPlusMenu({ isOpen, onClose, onFileClick, onOptionSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredItems = MENU_ITEMS.filter(item => 
+  const filteredItems = ALL_ITEMS.filter(item => 
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.desc.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -135,7 +158,11 @@ export default function AdvancedPlusMenu({ isOpen, onClose, onFileClick, onOptio
                     }}
                     className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl hover:bg-[#2A2B32] cursor-pointer transition-colors group"
                   >
-                    <Icon className={`w-[18px] h-[18px] shrink-0 ${item.iconClass} opacity-90 group-hover:opacity-100 transition-opacity`} />
+                    {item.customIcon ? (
+                      item.customIcon
+                    ) : (
+                      <Icon className={`w-[18px] h-[18px] shrink-0 ${item.iconClass} opacity-90 group-hover:opacity-100 transition-opacity`} />
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[14px] font-medium text-white whitespace-nowrap">{item.title}</span>
