@@ -151,9 +151,9 @@ export default function RegisterPage() {
       >
         {/* Title */}
         <div className="text-center space-y-2 mb-6">
-          <div className="flex justify-center items-center gap-2 font-bold text-xl tracking-wide font-outfit text-text">
-            <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
-            <span>CloserAI</span>
+          <div className="flex justify-center items-center gap-1 font-bold text-xl tracking-wide font-outfit text-text">
+            <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain scale-[1.4] translate-y-1" />
+            <span className="z-10">CloserAI</span>
           </div>
           <h2 className="text-2xl font-bold font-outfit text-text">Create Account</h2>
           <p className="text-muted text-sm">Verify to unlock your emotional companion.</p>
