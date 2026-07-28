@@ -423,30 +423,30 @@ const MessageBubble = React.memo(function MessageBubble({ message, isGroup, onAr
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     className="absolute bottom-full left-0 mb-2 w-64 bg-panel border border-border rounded-xl shadow-xl p-2 z-20"
                   >
-                    <div className="flex items-center bg-surface border border-white/5 rounded-lg p-1.5 mb-2 focus-within:border-white/20 transition-colors">
+                    <div className="flex items-center bg-surface/50 border border-border rounded-lg p-1.5 mb-2 focus-within:border-accent transition-colors">
                       <input 
                         type="text" 
                         placeholder="Ask to change response" 
-                        className="bg-transparent outline-none flex-1 px-2 text-xs text-white"
+                        className="bg-transparent outline-none flex-1 px-2 text-xs text-text placeholder:text-muted"
                         value={changeInstruction}
                         onChange={(e) => setChangeInstruction(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleChangeResponse('custom', changeInstruction)}
                       />
-                      <button onClick={() => handleChangeResponse('custom', changeInstruction)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-md transition-colors">
-                        <ArrowUp className="w-3 h-3 text-white" />
+                      <button onClick={() => handleChangeResponse('custom', changeInstruction)} className="p-1.5 bg-surface hover:bg-border/50 rounded-md transition-colors text-text">
+                        <ArrowUp className="w-3 h-3" />
                       </button>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => handleChangeResponse('try_again')} className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-surface flex items-center gap-3 transition-colors">
-                        <RefreshCw className="w-4 h-4 text-gray-400" />
+                      <button onClick={() => handleChangeResponse('try_again')} className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted hover:text-text hover:bg-surface flex items-center gap-3 transition-colors">
+                        <RefreshCw className="w-4 h-4" />
                         Try again
                       </button>
-                      <button onClick={() => handleChangeResponse('think_longer')} className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-surface flex items-center gap-3 transition-colors">
-                        <Lightbulb className="w-4 h-4 text-gray-400" />
+                      <button onClick={() => handleChangeResponse('think_longer')} className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted hover:text-text hover:bg-surface flex items-center gap-3 transition-colors">
+                        <Lightbulb className="w-4 h-4" />
                         Think longer
                       </button>
-                      <button onClick={() => handleChangeResponse('search_web')} className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-surface flex items-center gap-3 transition-colors">
-                        <Globe className="w-4 h-4 text-gray-400" />
+                      <button onClick={() => handleChangeResponse('search_web')} className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted hover:text-text hover:bg-surface flex items-center gap-3 transition-colors">
+                        <Globe className="w-4 h-4" />
                         Search the web
                       </button>
                     </div>

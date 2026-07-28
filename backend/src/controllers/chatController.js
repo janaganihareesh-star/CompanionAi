@@ -1015,9 +1015,9 @@ exports.verifyFact = async (req, res) => {
     if (!fact) return res.status(400).json({ error: 'Fact is required' });
 
     // 1. Web Search for the fact (using tavily if configured, or fallback)
-    const { searchWeb } = require('../services/webSearchService');
-    const searchResults = await searchWeb(fact, 3);
-    const searchContext = searchResults.map(r => `Source: ${r.url}\nSnippet: ${r.snippet}`).join('\n\n');
+    const { performFreeSearch } = require('../services/freeSearchService');
+    const searchResults = await performFreeSearch(fact, 3);
+    const searchContext = searchResults.map(r => `Source: ${r.link}\nSnippet: ${r.snippet}`).join('\n\n');
 
     // 2. Secondary LLM Verification Prompt
     const verificationPrompt = `
