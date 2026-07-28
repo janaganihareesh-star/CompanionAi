@@ -143,6 +143,7 @@ const PLUGIN_REGISTRY = {
   },
   zomato: {
     envKey: 'ZOMATO_API_KEY',
+    requiresKey: false,
     execute: async (action, params) => {
       // Mocked deep link for Zomato search
       const query = encodeURIComponent(params.item || params.restaurant || 'food');
@@ -151,6 +152,7 @@ const PLUGIN_REGISTRY = {
   },
   swiggy: {
     envKey: 'SWIGGY_API_KEY',
+    requiresKey: false,
     execute: async (action, params) => {
       const query = encodeURIComponent(params.item || 'food');
       return { success: true, message: `Found results for ${query} on Swiggy.`, url: `https://www.swiggy.com/search?res=${query}` };
@@ -158,19 +160,22 @@ const PLUGIN_REGISTRY = {
   },
   uber: {
     envKey: 'UBER_CLIENT_ID',
+    requiresKey: false,
     execute: async (action, params) => {
       const dropoff = encodeURIComponent(params.destination || '');
-      return { success: true, message: `Uber link generated to ${params.destination}.`, url: `uber://?client_id=${process.env.UBER_CLIENT_ID}&action=setPickup&pickup=my_location&dropoff[formatted_address]=${dropoff}` };
+      return { success: true, message: `Uber link generated to ${params.destination}.`, url: `uber://?client_id=${process.env.UBER_CLIENT_ID || 'dummy'}&action=setPickup&pickup=my_location&dropoff[formatted_address]=${dropoff}` };
     }
   },
   ola: {
     envKey: 'OLA_CLIENT_ID',
+    requiresKey: false,
     execute: async (action, params) => {
       return { success: true, message: `Ola link generated to ${params.destination}.`, url: `https://book.olacabs.com/?drop=${encodeURIComponent(params.destination || '')}` };
     }
   },
   bookmyshow: {
     envKey: 'BOOKMYSHOW_API_KEY',
+    requiresKey: false,
     execute: async (action, params) => {
       const movie = encodeURIComponent(params.movie || '');
       return { success: true, message: `Searching for ${movie} tickets on BookMyShow.`, url: `https://in.bookmyshow.com/explore/movies?q=${movie}` };
@@ -178,20 +183,23 @@ const PLUGIN_REGISTRY = {
   },
   amazon: {
     envKey: 'AMAZON_AFFILIATE_ID',
+    requiresKey: false,
     execute: async (action, params) => {
       const query = encodeURIComponent(params.product || '');
-      return { success: true, message: `Found products for ${query} on Amazon.`, url: `https://www.amazon.in/s?k=${query}&tag=${process.env.AMAZON_AFFILIATE_ID}` };
+      return { success: true, message: `Found products for ${query} on Amazon.`, url: `https://www.amazon.in/s?k=${query}&tag=${process.env.AMAZON_AFFILIATE_ID || 'dummy'}` };
     }
   },
   flipkart: {
     envKey: 'FLIPKART_AFFILIATE_ID',
+    requiresKey: false,
     execute: async (action, params) => {
       const query = encodeURIComponent(params.product || '');
-      return { success: true, message: `Found products for ${query} on Flipkart.`, url: `https://www.flipkart.com/search?q=${query}&affid=${process.env.FLIPKART_AFFILIATE_ID}` };
+      return { success: true, message: `Found products for ${query} on Flipkart.`, url: `https://www.flipkart.com/search?q=${query}&affid=${process.env.FLIPKART_AFFILIATE_ID || 'dummy'}` };
     }
   },
   myntra: {
     envKey: 'MYNTRA_API_KEY',
+    requiresKey: false,
     execute: async (action, params) => {
       const query = encodeURIComponent(params.product || '');
       return { success: true, message: `Found fashion items for ${query} on Myntra.`, url: `https://www.myntra.com/${query}` };
@@ -199,6 +207,7 @@ const PLUGIN_REGISTRY = {
   },
   meesho: {
     envKey: 'MEESHO_API_KEY',
+    requiresKey: false,
     execute: async (action, params) => {
       const query = encodeURIComponent(params.product || '');
       return { success: true, message: `Found products for ${query} on Meesho.`, url: `https://www.meesho.com/search?q=${query}` };
@@ -206,6 +215,7 @@ const PLUGIN_REGISTRY = {
   },
   district: {
     envKey: 'DISTRICT_API_KEY',
+    requiresKey: false,
     execute: async (action, params) => {
       const query = encodeURIComponent(params.product || '');
       return { success: true, message: `Found items for ${query} on District app.`, url: `https://district.app/search?q=${query}` };
@@ -233,11 +243,14 @@ exports.executePluginCall = async (pluginId, action, params) => {
 
     const apiKey = process.env[plugin.envKey];
     
-    if (!apiKey || apiKey.trim() === '' || apiKey.includes('your_')) {
-      return {
-        error: true,
-        message: `API Key Missing. Tell the user exactly this: "I tried to execute the action, but your ${plugin.envKey} is missing or invalid in the backend .env file. Please add your real API key so I can perform this action for real."`
-      };
+    // Only enforce API key if the plugin strictly requires it
+    if (plugin.requiresKey !== false) {
+      if (!apiKey || apiKey.trim() === '' || apiKey.includes('your_')) {
+        return {
+          error: true,
+          message: `API Key Missing. Tell the user exactly this: "I tried to execute the action, but your ${plugin.envKey} is missing or invalid in the backend .env file. Please add your real API key so I can perform this action for real."`
+        };
+      }
     }
 
     // Execute the real API logic
