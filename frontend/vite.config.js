@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const isAppStoreSafe = process.env.VITE_APP_STORE_SAFE === 'true';
 
   return {
-  base: './',
+  base: process.env.VITE_CAPACITOR_BUILD === 'true' ? './' : '/',
   plugins: [
     react(), 
     tailwindcss(),
